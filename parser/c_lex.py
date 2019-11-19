@@ -1,10 +1,10 @@
+# Almost referenced ANSI C grammar
+# Removed some code generation related reserved word
+
 import ply.lex as lex
-
-
 
 tokens = [
     'ID',
-    'TYPE',
     'IVAL',
     'FVAL',
     'SVAL',
@@ -46,6 +46,8 @@ tokens = [
     'INC',
     'DEC',
 
+    'TENARY',
+
     'LPAREN',
     'RPAREN',
     'LBRACK',
@@ -86,8 +88,8 @@ def t_NEWLINE(t):
     r'\n+'
     t.lexer.lineno += t.value.count("\n")
 
-t_IVAL = r'\d+([uU]|[lL]|[uU][lL]|[lL][uU])?'
-t_FVAL = r'((\d+)(\.\d+)(e(\+|-)?(\d+))? | (\d+)e(\+|-)?(\d+))([lL]|[fF])?'
+t_IVAL = r'(0x[0-9a-fA-F]*|\d+)([uU]|[lL]|[uU][lL]|[lL][uU])?'
+t_FVAL = r'((\d+)(\.\d+)(e(\+|-)?(\d+))?|(\d+)e(\+|-)?(\d+))([lL]|[fF])?'
 t_SVAL = r'\"([^\\\n]|(\\.))*?\"'
 t_CVAL = r'(L)?\'([^\\\n]|(\\.))*?\''
 
@@ -126,6 +128,8 @@ t_RSHIFT_ASSIGN = r'>>='
 
 t_INC = r'\+\+'
 t_DEC = r'--'
+
+t_TENARY = r'\?'
 
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
