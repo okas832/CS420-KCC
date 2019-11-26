@@ -157,3 +157,16 @@ def t_error(t):
 
 lexer = lex.lex()
 
+if __name__ == "__main__":
+
+    with open("input.c", "r") as f:
+        lexer.input(f.read())
+
+    while True:
+        token = lexer.token()
+        if not token: break
+        print(token)
+
+
+
+
