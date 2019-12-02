@@ -1,3 +1,3 @@
-int a=123, b, c=1234;
-int d=1;
-void f(int a){}
+int k=1, b=1;
+int a(){}
+int b(int a){}
