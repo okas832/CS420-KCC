@@ -391,7 +391,7 @@ def p_expr_2(p):
     # TODO : Handle postexpr as lvalue (ID or ID LBRACK expr_many RBRACK)
     #      : If not, throw exception
     pass
-
+ 
 
 def p_expr_3(p):
     """expr : TIMES unaryexpr assign_op expr"""
@@ -416,12 +416,12 @@ def p_assign_op(p):
 
 def p_expr_many_1(p):
     """expr_many : expr"""
-    pass
+    p[0] = EXPR_MANY([p[1]])
 
 
 def p_expr_many_2(p):
     """expr_many : expr_many COMMA expr"""
-    pass
+    p[0] = p[1] + EXPR_MANY([p[3]])
 
 
 def p_assign_1(p):
