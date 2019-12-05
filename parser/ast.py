@@ -136,12 +136,12 @@ class IFELSE(STMT):
 # Viable DEFinition ID (id_adv [+ array])
 # name : variable name
 # ptr_cnt : number of '*'s, int
-# array_sz : array size, IVAL. None for non-array variable
+# array_sz : array size, int >= 0. None for non-array variable
 class VDEFID(AST):
     def __init__(self, name, ptr_cnt, array_sz):
         self.name = name
         self.ptr_cnt = ptr_cnt
-        self.array_sz = array_sz  # None for non-array
+        self.array_sz = array_sz
     
     def __repr__(self):
         return 'VDEFID(%s, %d, %s)' % (self.name, self.ptr_cnt, self.array_sz)

@@ -68,7 +68,8 @@ def p_array_1(p):
 
 def p_array_2(p):
     """array : LBRACK IVAL RBRACK"""
-    p[0] = IVAL(p[2])
+    # Never negative, since IVAL >= 0
+    p[0] = p[2]
 
 
 # type id([arg] *[,arg]){*[expr]}
