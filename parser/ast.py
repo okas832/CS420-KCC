@@ -240,13 +240,13 @@ class UNOP(EXPR):
 
 
 class BINOP(EXPR):
-    def __init__(self, lexpr, op, rexpr):
-        self.lexpr = lexpr
+    def __init__(self, lhs, op, rhs):
+        self.lhs = lhs
         self.op = op
-        self.rexpr = rexpr
+        self.rhs = rhs
     
     def __repr__(self):
-        return 'BINOP(%s, "%s", %s)' % (self.lexpr, self.op, self.rexpr)
+        return 'BINOP(%s, "%s", %s)' % (self.lhs, self.op, self.rhs)
 
 
 class ASSIGN(EXPR):
