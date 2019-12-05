@@ -1,7 +1,20 @@
-int k=1, b=1;
-int a(){
+int v1=1, v2=1;
+int arr[2], *ptr;
+
+int a(void) {
     ;
 
     ;
 }
-int b(int a){}
+int b() {}
+int c(void) { }
+
+int main(void)
+{
+    int a, b;
+    for (a = 0; a < b; a++, b--)
+        if (a < b)
+            0;
+        else
+            1;
+}

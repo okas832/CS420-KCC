@@ -16,39 +16,35 @@ def p_goal_2(p):
     p[0] = GOAL([p[1]]) + p[2]
 
 
-def p_def_1(p):
-    """def : defv SEMICOL"""
+def p_def(p):
+    """def : defv
+           | deff"""
     p[0] = p[1]
 
 
-def p_def_2(p):
-    """def : deff"""
-    p[0] = p[1]
-
-
-# type id [=value] *[,id[=value]];;
+# type id [=value] *[,id[=value]];
 def p_defv_1(p):
-    """defv : type defv_many"""
+    """defv : type defv_multi SEMICOL"""
     p[0] = VDEF(p[1], p[2])
 
 
-def p_defv_many_1(p):
-    """defv_many : id_adv array"""
+def p_defv_multi_1(p):
+    """defv_multi : id_adv array"""
     p[0] = [(p[1], None)]
 
 
-def p_defv_many_2(p):
-    """defv_many : id_adv assign"""
+def p_defv_multi_2(p):
+    """defv_multi : id_adv assign"""
     p[0] = [(p[1], p[2])]
 
 
-def p_defv_many_3(p):
-    """defv_many : id_adv array COMMA defv_many"""
+def p_defv_multi_3(p):
+    """defv_multi : id_adv array COMMA defv_multi"""
     p[0] = [(p[1], None)] + p[4]
 
 
-def p_defv_many_4(p):
-    """defv_many : id_adv assign COMMA defv_many"""
+def p_defv_multi_4(p):
+    """defv_multi : id_adv assign COMMA defv_multi"""
     p[0] = [(p[1], p[2])] + p[4]
 
 
@@ -80,7 +76,8 @@ def p_deff(p):
 
 # for special case(no argument)
 def p_s_args_1(p):
-    """s_args : empty"""
+    """s_args : empty
+              | VOID"""
     p[0] = []
 
 
@@ -108,8 +105,28 @@ def p_arg(p):
 
 # body : *[stmt]
 def p_body_1(p):
-    """body : pre_stmt_many"""
+    """body : pre_defv_many pre_stmt_many"""
     p[0] = p[1]
+
+
+def p_pre_defv_many_1(p):
+    """pre_defv_many : empty"""
+    p[0] = []
+
+
+def p_pre_defv_many_2(p):
+    """pre_defv_many : defv_many"""
+    p[0] = p[1]
+
+
+def p_defv_many_1(p):
+    """defv_many : defv"""
+    p[0] = [p[1]]
+
+
+def p_defv_many_2(p):
+    """defv_many : defv defv_many"""
+    p[0] = [p[1]] + p[2]
 
 
 def p_pre_stmt_many_1(p):
