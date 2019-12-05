@@ -1,5 +1,5 @@
 int v1=1, v2=1;
-int arr[2], *ptr;
+int arr[2], *ptr1, **ptr2, *ptr_arr[123];
 
 int a(void) {
     ;

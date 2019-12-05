@@ -55,3 +55,48 @@ class EXPR(STMT):
     
     def __repr__(self):
         return "EXPR(%s)" % (str(self.ast))
+
+
+# ID VARiable (id_adv [+ array])
+# id : variable ID
+# ptr_cnt : number of '*'s, int
+# array_sz : array size, IVAL. None for non-array variable
+class IDVAR(AST):
+    def __init__(self, id, ptr_cnt, array_sz):
+        self.id = id
+        self.ptr_cnt = ptr_cnt
+        self.array_sz = array_sz  # None for non-array
+    
+    def __repr__(self):
+        return "LVALUE(%s, %d, %s)" % (self.id, self.ptr_cnt, str(self.array_sz))
+
+
+# CONSTant values
+# val: value, string
+class CONST(AST):
+    def __init__(self, val):
+        self.val = val
+
+
+# Integer VALue
+class IVAL(CONST):
+    def __repr__(self):
+        return "IVAL(%s)" % self.val
+
+
+# Float VALue
+class FVAL(CONST):
+    def __repr__(self):
+        return "FVAL(%s)" % self.val
+
+
+# String VALue
+class SVAL(CONST):
+    def __repr__(self):
+        return "SVAL(%s)" % self.val
+
+
+# Char VALue
+class CVAL(CONST):
+    def __repr__(self):
+        return "CVAL(%s)" % self.val

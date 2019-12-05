@@ -30,6 +30,7 @@ def p_defv_1(p):
 
 def p_defv_multi_1(p):
     """defv_multi : id_adv array"""
+    p[1].array_sz = p[2]
     p[0] = [(p[1], None)]
 
 
@@ -40,6 +41,7 @@ def p_defv_multi_2(p):
 
 def p_defv_multi_3(p):
     """defv_multi : id_adv array COMMA defv_multi"""
+    p[1].array_sz = p[2]
     p[0] = [(p[1], None)] + p[4]
 
 
@@ -50,22 +52,23 @@ def p_defv_multi_4(p):
 
 def p_id_adv_1(p):
     """id_adv : ID"""
-    p[0] = p[1]
+    p[0] = IDVAR(p[1], 0, None)
 
 
 def p_id_adv_2(p):
     """id_adv : TIMES id_adv"""
+    p[2].ptr_cnt += 1
     p[0] = p[2]
 
 
 def p_array_1(p):
     """array : empty"""
-    pass
+    p[0] = None
 
 
 def p_array_2(p):
     """array : LBRACK IVAL RBRACK"""
-    pass
+    p[0] = IVAL(p[2])
 
 
 # type id([arg] *[,arg]){*[expr]}
@@ -434,12 +437,24 @@ def p_type(p):
     p[0] = p[1]
 
 
-def p_const(p):
-    """const : IVAL
-             | FVAL
-             | SVAL
-             | CVAL"""
-    p[0] = p[1]
+def p_const_1(p):
+    """const : IVAL"""
+    p[0] = IVAL(p[1])
+
+
+def p_const_2(p):
+    """const : FVAL"""
+    p[0] = FVAL(p[1])
+
+
+def p_const_3(p):
+    """const : SVAL"""
+    p[0] = SVAL(p[1])
+
+
+def p_const_4(p):
+    """const : CVAL"""
+    p[0] = CVAL(p[1])
 
 
 def p_empty(p):
