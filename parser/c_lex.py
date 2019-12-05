@@ -58,8 +58,6 @@ tokens = [
     'PERIOD',
     'SEMICOL',
     'COLON',
-
-    'NEWLINE'
 ]
 
 reserved = {
@@ -89,7 +87,6 @@ t_ignore = ' \t\x0c'
 def t_NEWLINE(t):
     r'\n+'
     t.lexer.lineno += t.value.count("\n")
-    return t
 
 t_IVAL = r'(0x[0-9a-fA-F]*|\d+)([uU]|[lL]|[uU][lL]|[lL][uU])?'
 t_FVAL = r'((\d+)(\.\d+)(e(\+|-)?(\d+))?|(\d+)e(\+|-)?(\d+))([lL]|[fF])?'

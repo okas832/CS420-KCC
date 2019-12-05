@@ -18,7 +18,7 @@ def p_goal_2(p):
 # type id [=value] *[,id[=value]];;
 
 def p_def_1(p):
-    "def : type def_many nlem"
+    "def : type def_many"
     p[0] = VDEF(p[1], p[2])
 
 def p_def_many_1(p):
@@ -41,7 +41,7 @@ def p_def_many_4(p):
 # type id([arg] *[,arg]){*[expr]}
 
 def p_def_2(p):
-    "def : type ID LPAREN s_args RPAREN LBRACE body RBRACE nlem"
+    "def : type ID LPAREN s_args RPAREN LBRACE body RBRACE"
     p[0] = FDEF(p[1], p[2], p[4], p[7])
 
 
@@ -83,25 +83,42 @@ def p_pre_stmt_many_2(p):
     p[0] = p[1]
 
 def p_stmt_many_1(p):
-    "stmt_many : stmt nlem"
-    p[0] = [LINE([p[1]])]
+    "stmt_many : stmt"
+    p[0] = [p[1]]
 
 def p_stmt_many_2(p):
-    "stmt_many : stmt nlem stmt_many"
-    if p[2] == "":
-        p[0] = [LINE([p[1]]) + p[3][0]] + p[3][1:]
-    elif p[2] == "\n":
-        p[0] = [LINE([p[1]])] + p[3]
-    else:
-        p[0] = p[3]
+    "stmt_many : stmt stmt_many"
+    p[0] = [p[1]] + p[2]
+
 
 def p_stmt_1(p):
-    "stmt : SEMICOL"
-    p[0] = p[1]
+    "stmt : LBRACE body RBRACE"
+    pass
 
+# EXPR
 def p_stmt_2(p):
-    "stmt : empty"
-    p[0] = ""
+    "stmt : expr SEMICOL"
+    pass
+
+# WHILE
+def p_stmt_3(p):
+    "stmt : WHILE LPAREN expr RPAREN stmt"
+    pass
+
+# FOR
+def p_stmt_4(p):
+    "stmt : FOR LPAREN expr SEMICOL expr SEMICOL expr RPAREN stmt"
+    pass
+
+# COND, IF
+def p_stmt_5(p):
+    "stmt : IF LPAREN expr RPAREN stmt"
+    pass
+
+# COND, IF - ELSE
+def p_stmt_6(p):
+    "stmt : IF LPAREN expr RPAREN stmt ELSE stmt"
+    pass
 
 
 
@@ -126,13 +143,6 @@ def p_const(p):
              | CVAL"""
     p[0] = p[1]
 
-
-# Ignore NEWLINE if exist
-def p_nlem(p):
-    """nlem : NEWLINE
-            | empty"""
-    p[0] = p[1]
-
 def p_empty(p):
     """empty :"""
     pass
@@ -140,7 +150,7 @@ def p_empty(p):
 yacc.yacc()
 if __name__ == "__main__":
     with open("input.c", "r") as f:
-        result = yacc.parse(f.read())
+        result = yacc.parse(f.read(), tracking = True)
     print(result)
 
 
