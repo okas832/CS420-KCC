@@ -13,7 +13,7 @@ class GOAL(AST):
         return GOAL(self.defs + rhs.defs)
 
     def __repr__(self):
-        return 'GOAL(%s)' % (str(self.defs))
+        return 'GOAL(%s)' % self.defs
 
 
 # Variable DEFine
@@ -26,7 +26,7 @@ class VDEF(AST):
         self.pl = pl
 
     def __repr__(self):
-        return 'VDEF(%s, %s)' % (self.type, str(self.pl))
+        return 'VDEF(%s, %s)' % (self.type, self.pl)
 
 
 # Function DEFine
@@ -42,7 +42,7 @@ class FDEF(AST):
         self.body = body
 
     def __repr__(self):
-        return 'FDEF(%s, %s, %s, %s)' % (self.type, self.name, self.arg, str(self.body))
+        return 'FDEF(%s, %s, %s, %s)' % (self.type, self.name, self.arg, self.body)
 
 
 # STateMenT
@@ -64,7 +64,7 @@ class BODY(STMT):
         self.stmts = stmts
     
     def __repr__(self):
-        return 'BODY(%s, %s)' % (str(self.defvs), str(self.stmts))
+        return 'BODY(%s, %s)' % (self.defvs, self.stmts)
 
 
 # EMPTY STateMenT
@@ -88,7 +88,7 @@ class EXPR_MANY(STMT, EXPR):
         return EXPR_MANY(self.exprs + rhs.exprs)
     
     def __repr__(self):
-        return 'EXPR_MANY(%s)' % (str(self.exprs))
+        return 'EXPR_MANY(%s)' % self.exprs
 
 
 # WHILE loop
@@ -100,7 +100,7 @@ class WHILE(STMT):
         self.body = body
     
     def __repr__(self):
-        return 'WHILE(%s, %s)' % (str(self.cond), str(self.body))
+        return 'WHILE(%s, %s)' % (self.cond, self.body)
 
 
 # FOR loop
@@ -116,7 +116,7 @@ class FOR(STMT):
         self.body = body
     
     def __repr__(self):
-        return 'FOR(%s, %s, %s, %s)' % (str(self.init), str(self.cond), str(self.update), str(self.body))
+        return 'FOR(%s, %s, %s, %s)' % (self.init, self.cond, self.update, self.body)
 
 
 # IF-ELSE statement
@@ -130,7 +130,7 @@ class IFELSE(STMT):
         self.else_stmt = else_stmt
     
     def __repr__(self):
-        return 'IFELSE(%s, %s, %s)' % (str(self.cond), str(self.if_stmt), str(self.else_stmt))
+        return 'IFELSE(%s, %s, %s)' % (self.cond, self.if_stmt, self.else_stmt)
 
 
 # ID VARiable (id_adv [+ array])
@@ -144,7 +144,7 @@ class IDVAR(AST):
         self.array_sz = array_sz  # None for non-array
     
     def __repr__(self):
-        return 'LVALUE(%s, %d, %s)' % (self.name, self.ptr_cnt, str(self.array_sz))
+        return 'LVALUE(%s, %d, %s)' % (self.name, self.ptr_cnt, self.array_sz)
 
 
 class ID(EXPR):
@@ -161,7 +161,7 @@ class SUBSCR(EXPR):
         self.idxexpr = idxexpr
     
     def __repr__(self):
-        return 'SUBSCR(%s, %s)' % (str(self.arrexpr), str(self.idxexpr))
+        return 'SUBSCR(%s, %s)' % (self.arrexpr, self.idxexpr)
 
 
 class CALL(EXPR):
@@ -170,7 +170,7 @@ class CALL(EXPR):
         self.argexprs = argexprs
     
     def __repr__(self):
-        return 'CALL(%s, %s)' % (str(self.funcexpr), str(self.argexprs))
+        return 'CALL(%s, %s)' % (self.funcexpr, self.argexprs)
 
 
 class POST_INC(EXPR):
@@ -178,7 +178,7 @@ class POST_INC(EXPR):
         self.expr = expr
     
     def __repr__(self):
-        return 'POST_INC(%s)' % str(self.expr)
+        return 'POST_INC(%s)' % self.expr
 
 
 class POST_DEC(EXPR):
@@ -186,7 +186,7 @@ class POST_DEC(EXPR):
         self.expr = expr
     
     def __repr__(self):
-        return 'POST_DEC(%s)' % str(self.expr)
+        return 'POST_DEC(%s)' % self.expr
 
 
 # CONSTant values
