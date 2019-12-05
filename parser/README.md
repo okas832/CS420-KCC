@@ -1,8 +1,10 @@
 # KCC Parser
 
 ## TODO
-- Define nodes for AST
-- Implement yacc for function body
+- [x] Define nodes for AST
+- [x] Implement yacc for function body
+- [ ] Add line number to every AST nodes
+- [ ] Fix if-then vs. if-then-else shift/reduce conflict (PLY currently resolves to shift, which is correct)
 
 ## Grammar
 ```
