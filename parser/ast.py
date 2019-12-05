@@ -42,11 +42,28 @@ class FDEF(AST):
         self.body = body
 
     def __repr__(self):
-        return 'FDEF(%s, %s, %s, %s)' % (self.type, self.id, self.arg, self.body)
+        return 'FDEF(%s, %s, %s, %s)' % (self.type, self.id, self.arg, str(self.body))
 
 
 class STMT(AST):
     pass
+
+
+class BODY(STMT):
+    def __init__(self, defvs, stmts):
+        self.defvs = defvs
+        self.stmts = stmts
+    
+    def __repr__(self):
+        return 'BODY(%s, %s)' % (str(self.defvs), str(self.stmts))
+
+
+class EMPTY_STMT(STMT):
+    def __init__(self):
+        pass
+
+    def __repr__(self):
+        return "EMPTY_STMT()"
 
 
 class EXPR(STMT):

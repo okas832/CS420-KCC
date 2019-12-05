@@ -106,10 +106,10 @@ def p_arg(p):
     p[0] = (p[1], p[2])
 
 
-# body : *[stmt]
+# body : *[defv] *[stmt]
 def p_body_1(p):
     """body : pre_defv_many pre_stmt_many"""
-    p[0] = p[1]
+    p[0] = BODY(p[1], p[2])
 
 
 def p_pre_defv_many_1(p):
@@ -154,12 +154,12 @@ def p_stmt_many_2(p):
 
 def p_stmt_1(p):
     """stmt : SEMICOL"""
-    pass
+    p[0] = EMPTY_STMT()
 
 
 def p_stmt_2(p):
     """stmt : LBRACE body RBRACE"""
-    pass
+    p[0] = p[2]
 
 
 # EXPR
