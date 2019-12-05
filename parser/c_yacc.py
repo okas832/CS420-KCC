@@ -102,7 +102,7 @@ def p_args_3(p):
 
 
 def p_arg(p):
-    """arg : type ID"""
+    """arg : type id_adv"""
     p[0] = (p[1], p[2])
 
 
