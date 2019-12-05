@@ -1,6 +1,7 @@
 class AST():
     pass
 
+
 # goal : [def, def, ... , def]
 class GOAL(AST):
     def __init__(self, defs):
@@ -8,11 +9,12 @@ class GOAL(AST):
 
     def __add__(self, rhs):
         if not isinstance(rhs, GOAL):
-            raise TypeError("Expected GOAL, but %s comes."%(type(rhs)))
+            raise TypeError("Expected GOAL, but %s comes." % (type(rhs)))
         return GOAL(self.defs + rhs.defs)
 
     def __repr__(self):
-        return "GOAL(%s)"%(str(self.defs))
+        return "GOAL(%s)" % (str(self.defs))
+
 
 # Variable DEFine
 # type : define type
@@ -24,7 +26,8 @@ class VDEF(AST):
         self.pl = pl
 
     def __repr__(self):
-        return 'VDEF(%s, %s)'%(self.type, str(self.pl))
+        return 'VDEF(%s, %s)' % (self.type, str(self.pl))
+
 
 # Function DEFine
 # type : return type
@@ -39,15 +42,16 @@ class FDEF(AST):
         self.body = body
 
     def __repr__(self):
-        return 'FDEF(%s, %s, %s, %s)'%(self.type, self.id, self.arg, self.body)
+        return 'FDEF(%s, %s, %s, %s)' % (self.type, self.id, self.arg, self.body)
 
 
 class STMT(AST):
     pass
+
 
 class EXPR(STMT):
     def __init__(self, ast):
         self.ast = ast
     
     def __repr__(self):
-        return "EXPR(%s)"%(str(self.ast))
+        return "EXPR(%s)" % (str(self.ast))

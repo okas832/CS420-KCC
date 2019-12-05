@@ -62,20 +62,15 @@ tokens = [
 
 reserved = {
     'break'    : 'BREAK',
-    'case'     : 'CASE',
     'char'     : 'CHAR',
-    'const'    : 'CONST',
     'continue' : 'CONTINUE',
     'do'       : 'DO',
     'else'     : 'ELSE',
     'float'    : 'FLOAT',
     'for'      : 'FOR',
-    'goto'     : 'GOTO',
     'if'       : 'IF',
     'int'      : 'INT',
     'return'   : 'RETURN',
-    'switch'   : 'SWITCH',
-    'unsigned' : 'UNSIGNED',
     'void'     : 'VOID',
     'while'    : 'WHILE'
 }
@@ -84,9 +79,11 @@ tokens += reserved.values()
 
 t_ignore = ' \t\x0c'
 
+
 def t_NEWLINE(t):
     r'\n+'
     t.lexer.lineno += t.value.count("\n")
+
 
 t_IVAL = r'(0x[0-9a-fA-F]*|\d+)([uU]|[lL]|[uU][lL]|[lL][uU])?'
 t_FVAL = r'((\d+)(\.\d+)(e(\+|-)?(\d+))?|(\d+)e(\+|-)?(\d+))([lL]|[fF])?'
@@ -142,18 +139,22 @@ t_PERIOD  = r'\.'
 t_SEMICOL = r';'
 t_COLON   = r':'
 
+
 def t_ID(t):
     r'[A-Za-z_][\w_]*'
     t.type = reserved.get(t.value, "ID")
     return t
 
+
 def t_COMMENT(t):
     r'/\*(.|\n)*?\*/'
     t.lexer.lineno += t.value.count('\n')
 
+
 def t_error(t):
     print("Illegal character %s" % repr(t.value[0]))
     t.lexer.skip(1)
+
 
 lexer = lex.lex()
 
@@ -164,7 +165,8 @@ if __name__ == "__main__":
 
     while True:
         token = lexer.token()
-        if not token: break
+        if not token:
+            break
         print(token)
 
 
