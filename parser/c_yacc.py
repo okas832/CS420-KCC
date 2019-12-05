@@ -194,54 +194,62 @@ def p_stmt_7(p):
 
 # primary expression
 def p_priexpr_1(p):
-    """priexpr : ID
-                | const"""
-    pass
+    """priexpr : ID"""
+    p[0] = ID(p[1])
 
 
 def p_priexpr_2(p):
+    """priexpr : const"""
+    p[0] = p[1]
+
+
+def p_priexpr_3(p):
     """priexpr : LPAREN expr_many RPAREN"""
-    pass
+    p[0] = p[2]
 
 
 # postfix expression
 def p_postexpr_1(p):
     """postexpr : priexpr"""
-    pass
+    p[0] = p[1]
 
 
 # array indexing
 def p_postexpr_2(p):
     """postexpr : postexpr LBRACK expr_many RBRACK"""
-    pass
+    p[0] = SUBSCR(p[1], p[3])
 
 
 # function call with void parameter
 def p_postexpr_3(p):
     """postexpr : postexpr LPAREN RPAREN"""
-    pass
+    p[0] = CALL(p[1], [])
 
 
 # function call with parameters
 def p_postexpr_4(p):
     """postexpr : postexpr LPAREN argexpr_list RPAREN"""
-    pass
+    p[0] = CALL(p[1], p[3])
 
 
 def p_postexpr_5(p):
-    """postexpr : postexpr INC
-                | postexpr DEC"""
-    pass
+    """postexpr : postexpr INC"""
+    p[0] = POST_INC(p[1])
+
+
+def p_postexpr_6(p):
+    """postexpr : postexpr DEC"""
+    p[0] = POST_DEC(p[1])
 
 
 def p_argexpr_list_1(p):
     """argexpr_list : expr"""
-    pass
+    p[0] = [p[1]]
 
 
 def p_argexpr_list_2(p):
     """argexpr_list : argexpr_list COMMA expr"""
-    pass
+    p[0] = p[1] + [p[3]]
 
 
 # unary expression

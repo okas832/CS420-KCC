@@ -45,18 +45,13 @@ class FDEF(AST):
         return 'FDEF(%s, %s, %s, %s)' % (self.type, self.name, self.arg, str(self.body))
 
 
-# EXPRession
-# ast : ast of expression
-class EXPR(AST):
-    def __init__(self, ast):
-        self.ast = ast
-    
-    def __repr__(self):
-        return 'EXPR(%s)' % (str(self.ast))
-
-
 # STateMenT
 class STMT(AST):
+    pass
+
+
+# EXPRession
+class EXPR(AST):
     pass
 
 
@@ -83,7 +78,7 @@ class EMPTY_STMT(STMT):
 
 # EXPRessions MANY
 # exprs: expr*
-class EXPR_MANY(STMT):
+class EXPR_MANY(STMT, EXPR):
     def __init__(self, exprs):
         self.exprs = exprs
     
@@ -152,9 +147,51 @@ class IDVAR(AST):
         return 'LVALUE(%s, %d, %s)' % (self.name, self.ptr_cnt, str(self.array_sz))
 
 
+class ID(EXPR):
+    def __init__(self, name):
+        self.name = name
+    
+    def __repr__(self):
+        return 'ID(%s)' % self.name
+
+
+class SUBSCR(EXPR):
+    def __init__(self, arrexpr, idxexpr):
+        self.arrexpr = arrexpr
+        self.idxexpr = idxexpr
+    
+    def __repr__(self):
+        return 'SUBSCR(%s, %s)' % (str(self.arrexpr), str(self.idxexpr))
+
+
+class CALL(EXPR):
+    def __init__(self, funcexpr, argexprs):
+        self.funcexpr = funcexpr
+        self.argexprs = argexprs
+    
+    def __repr__(self):
+        return 'CALL(%s, %s)' % (str(self.funcexpr), str(self.argexprs))
+
+
+class POST_INC(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'POST_INC(%s)' % str(self.expr)
+
+
+class POST_DEC(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'POST_DEC(%s)' % str(self.expr)
+
+
 # CONSTant values
 # val: value, string
-class CONST(AST):
+class CONST(EXPR):
     def __init__(self, val):
         self.val = val
 

@@ -8,6 +8,10 @@ int a(void) {
 }
 int b() {}
 int c(void) { }
+int d(int arg1, float arg2)
+{
+    arg1++;
+}
 
 int main(void)
 {
@@ -18,5 +22,5 @@ int main(void)
         else if (a > b)
             1;
         else
-            2;
+            d(5, 6.7);
 }
