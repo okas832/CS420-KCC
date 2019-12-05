@@ -52,7 +52,13 @@ class STMT(AST):
 
 # EXPRession
 class EXPR(AST):
-    pass
+    def __add__(self, rhs):
+        if not isinstance(rhs, EXPR):
+            raise TypeError('Expected EXPR, but %s comes.' % (type(rhs)))
+        if isinstance(rhs, EXPR_MANY):
+            return EXPR_MANY([self] + rhs.exprs)
+        else:
+            return EXPR_MANY([self, rhs])
 
 
 # BODY
@@ -83,9 +89,12 @@ class EXPR_MANY(STMT, EXPR):
         self.exprs = exprs
     
     def __add__(self, rhs):
-        if not isinstance(rhs, EXPR_MANY):
-            raise TypeError('Expected EXPR_MANY, but %s comes.' % (type(rhs)))
-        return EXPR_MANY(self.exprs + rhs.exprs)
+        if not isinstance(rhs, EXPR):
+            raise TypeError('Expected EXPR, but %s comes.' % (type(rhs)))
+        if isinstance(rhs, EXPR_MANY):
+            return EXPR_MANY(self.exprs + rhs.exprs)
+        else:
+            return EXPR_MANY(self.exprs + [rhs])
     
     def __repr__(self):
         return 'EXPR_MANY(%s)' % self.exprs

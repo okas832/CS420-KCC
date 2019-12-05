@@ -439,12 +439,12 @@ def p_assign_op(p):
 
 def p_expr_many_1(p):
     """expr_many : expr"""
-    p[0] = EXPR_MANY([p[1]])
+    p[0] = p[1]
 
 
 def p_expr_many_2(p):
     """expr_many : expr_many COMMA expr"""
-    p[0] = p[1] + EXPR_MANY([p[3]])
+    p[0] = p[1] + p[3]
 
 
 def p_assign_1(p):
