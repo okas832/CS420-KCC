@@ -71,25 +71,38 @@ def p_arg(p):
 
 # body : *[stmt]
 def p_body_1(p):
-    "body : stmt_many"
+    "body : pre_stmt_many"
+    p[0] = p[1]
+
+def p_pre_stmt_many_1(p):
+    "pre_stmt_many : empty"
+    p[0] = []
+
+def p_pre_stmt_many_2(p):
+    "pre_stmt_many : stmt_many"
     p[0] = p[1]
 
 def p_stmt_many_1(p):
-    "stmt_many : empty"
-    p[0] = []
+    "stmt_many : stmt nlem"
+    p[0] = [LINE([p[1]])]
 
 def p_stmt_many_2(p):
-    "stmt_many : stmt"
-    p[0] = [p[1]]
-
-def p_stmt_many_3(p):
-    "stmt_many : stmt stmt_many"
-    p[0] = [p[1]] + p[2]
-
+    "stmt_many : stmt nlem stmt_many"
+    if p[2] == "":
+        p[0] = [LINE([p[1]]) + p[3][0]] + p[3][1:]
+    elif p[2] == "\n":
+        p[0] = [LINE([p[1]])] + p[3]
+    else:
+        p[0] = p[3]
 
 def p_stmt_1(p):
     "stmt : SEMICOL"
-    p[0] = ()
+    p[0] = p[1]
+
+def p_stmt_2(p):
+    "stmt : empty"
+    p[0] = ""
+
 
 
 def p_assign_1(p):
@@ -118,7 +131,7 @@ def p_const(p):
 def p_nlem(p):
     """nlem : NEWLINE
             | empty"""
-    pass
+    p[0] = p[1]
 
 def p_empty(p):
     """empty :"""

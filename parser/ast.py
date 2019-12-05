@@ -42,4 +42,15 @@ class FDEF(AST):
         return 'FDEF(%s, %s, %s, %s)'%(self.type, self.id, self.arg, self.body)
 
 
+class LINE(AST):
+    def __init__(self, stmts):
+        self.stmts = stmts
+
+    def __add__(self, rhs):
+        if not isinstance(rhs, LINE):
+            raise TypeError("Expected GOAL, but %s comes."%(type(rhs)))
+        return LINE(self.stmts + rhs.stmts)
+
+    def __repr__(self):
+        return 'LINE(%s)'%(self.stmts)
 
