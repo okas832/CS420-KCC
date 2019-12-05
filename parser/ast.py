@@ -26,7 +26,7 @@ class VDEF(AST):
         self.pl = pl
 
     def __repr__(self):
-        return 'VDEF(%s, %s)' % (self.type, self.pl)
+        return 'VDEF("%s", %s)' % (self.type, self.pl)
 
 
 # Function DEFine
@@ -42,7 +42,7 @@ class FDEF(AST):
         self.body = body
 
     def __repr__(self):
-        return 'FDEF(%s, %s, %s, %s)' % (self.type, self.name, self.arg, self.body)
+        return 'FDEF("%s", "%s", %s, %s)' % (self.type, self.name, self.arg, self.body)
 
 
 # STateMenT
@@ -144,7 +144,7 @@ class VDEFID(AST):
         self.array_sz = array_sz
     
     def __repr__(self):
-        return 'VDEFID(%s, %d, %s)' % (self.name, self.ptr_cnt, self.array_sz)
+        return 'VDEFID("%s", %d, %s)' % (self.name, self.ptr_cnt, self.array_sz)
 
 
 class ID(EXPR):
@@ -152,7 +152,7 @@ class ID(EXPR):
         self.name = name
     
     def __repr__(self):
-        return 'ID(%s)' % self.name
+        return 'ID("%s")' % self.name
 
 
 class SUBSCR(EXPR):
@@ -227,7 +227,7 @@ class UNOP(EXPR):
         self.expr = expr
     
     def __repr__(self):
-        return 'UNOP(%s, %s)' % (self.op, self.expr)
+        return 'UNOP("%s", %s)' % (self.op, self.expr)
 
 
 class BINOP(EXPR):
@@ -237,7 +237,7 @@ class BINOP(EXPR):
         self.rexpr = rexpr
     
     def __repr__(self):
-        return 'BINOP(%s, %s, %s)' % (self.lexpr, self.op, self.rexpr)
+        return 'BINOP(%s, "%s", %s)' % (self.lexpr, self.op, self.rexpr)
 
 
 class ASSIGN(EXPR):
@@ -247,7 +247,7 @@ class ASSIGN(EXPR):
         self.rhs = rhs
     
     def __repr__(self):
-        return 'ASSIGN(%s, %s, %s)' % (self.lhs, self.op, self.rhs)
+        return 'ASSIGN(%s, "%s", %s)' % (self.lhs, self.op, self.rhs)
 
 
 # CONSTant values
