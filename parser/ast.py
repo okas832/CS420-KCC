@@ -18,7 +18,7 @@ class GOAL(AST):
 
 # Variable DEFine
 # type : define type
-# pl : pair list (id, value)
+# pl : pair list (name, value)
 #      value is None if not exist
 class VDEF(AST):
     def __init__(self, type, pl):
@@ -31,18 +31,18 @@ class VDEF(AST):
 
 # Function DEFine
 # type : return type
-# id : function name
-# arg : argument (id, type) pair
+# name : function name
+# arg : argument (name, type) pair
 # body : statements
 class FDEF(AST):
-    def __init__(self, type, id, arg, body):
+    def __init__(self, type, name, arg, body):
         self.type = type
-        self.id = id
+        self.name = name
         self.arg = arg
         self.body = body
 
     def __repr__(self):
-        return 'FDEF(%s, %s, %s, %s)' % (self.type, self.id, self.arg, str(self.body))
+        return 'FDEF(%s, %s, %s, %s)' % (self.type, self.name, self.arg, str(self.body))
 
 
 # EXPRession
@@ -139,17 +139,17 @@ class IFELSE(STMT):
 
 
 # ID VARiable (id_adv [+ array])
-# id : variable ID
+# name : variable name
 # ptr_cnt : number of '*'s, int
 # array_sz : array size, IVAL. None for non-array variable
 class IDVAR(AST):
-    def __init__(self, id, ptr_cnt, array_sz):
-        self.id = id
+    def __init__(self, name, ptr_cnt, array_sz):
+        self.name = name
         self.ptr_cnt = ptr_cnt
         self.array_sz = array_sz  # None for non-array
     
     def __repr__(self):
-        return 'LVALUE(%s, %d, %s)' % (self.id, self.ptr_cnt, str(self.array_sz))
+        return 'LVALUE(%s, %d, %s)' % (self.name, self.ptr_cnt, str(self.array_sz))
 
 
 # CONSTant values
