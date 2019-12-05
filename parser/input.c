@@ -15,6 +15,8 @@ int main(void)
     for (a = 0; a < b; a++, b--)
         if (a < b)
             0;
-        else
+        else if (a > b)
             1;
+        else
+            2;
 }

@@ -162,34 +162,34 @@ def p_stmt_2(p):
     p[0] = p[2]
 
 
-# EXPR
+# EXPR_MANY
 def p_stmt_3(p):
     """stmt : expr_many SEMICOL"""
-    pass
+    p[0] = p[1]
 
 
 # WHILE
 def p_stmt_4(p):
     """stmt : WHILE LPAREN expr_many RPAREN stmt"""
-    pass
+    p[0] = WHILE(p[3], p[5])
 
 
 # FOR
 def p_stmt_5(p):
     """stmt : FOR LPAREN expr_many SEMICOL expr_many SEMICOL expr_many RPAREN stmt"""
-    pass
+    p[0] = FOR(p[3], p[5], p[7], p[9])
 
 
 # COND, IF
 def p_stmt_6(p):
     """stmt : IF LPAREN expr_many RPAREN stmt"""
-    pass
+    p[0] = IFELSE(p[3], p[5], None)
 
 
 # COND, IF - ELSE
 def p_stmt_7(p):
     """stmt : IF LPAREN expr_many RPAREN stmt ELSE stmt"""
-    pass
+    p[0] = IFELSE(p[3], p[5], p[7])
 
 
 # primary expression
