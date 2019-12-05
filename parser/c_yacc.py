@@ -52,7 +52,7 @@ def p_defv_multi_4(p):
 
 def p_id_adv_1(p):
     """id_adv : ID"""
-    p[0] = IDVAR(p[1], 0, None)
+    p[0] = VDEFID(p[1], 0, None)
 
 
 def p_id_adv_2(p):

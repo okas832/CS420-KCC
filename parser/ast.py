@@ -133,11 +133,11 @@ class IFELSE(STMT):
         return 'IFELSE(%s, %s, %s)' % (self.cond, self.if_stmt, self.else_stmt)
 
 
-# ID VARiable (id_adv [+ array])
+# Viable DEFinition ID (id_adv [+ array])
 # name : variable name
 # ptr_cnt : number of '*'s, int
 # array_sz : array size, IVAL. None for non-array variable
-class IDVAR(AST):
+class VDEFID(AST):
     def __init__(self, name, ptr_cnt, array_sz):
         self.name = name
         self.ptr_cnt = ptr_cnt
