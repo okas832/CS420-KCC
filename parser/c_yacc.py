@@ -38,7 +38,7 @@ def p_defv_many_2(p):
 
 def p_defv_many_3(p):
     "defv_many : id_adv array COMMA defv_many"
-    p[0] = [(p[1], None)] + p[3]
+    p[0] = [(p[1], None)] + p[4]
 
 def p_defv_many_4(p):
     "defv_many : id_adv assign COMMA defv_many"
