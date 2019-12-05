@@ -1,6 +1,6 @@
 import c_lex
 import ply.yacc as yacc
-import ast
+from ast import *
 
 tokens = c_lex.tokens
 
@@ -8,12 +8,12 @@ tokens = c_lex.tokens
 #  goal : def def ... def
 def p_goal_1(p):
     """goal : def"""
-    p[0] = ast.GOAL([p[1]])
+    p[0] = GOAL([p[1]])
 
 
 def p_goal_2(p):
     """goal : def goal"""
-    p[0] = ast.GOAL([p[1]]) + p[2]
+    p[0] = GOAL([p[1]]) + p[2]
 
 
 def p_def_1(p):
@@ -29,7 +29,7 @@ def p_def_2(p):
 # type id [=value] *[,id[=value]];;
 def p_defv_1(p):
     """defv : type defv_many"""
-    p[0] = ast.VDEF(p[1], p[2])
+    p[0] = VDEF(p[1], p[2])
 
 
 def p_defv_many_1(p):
@@ -75,7 +75,7 @@ def p_array_2(p):
 # type id([arg] *[,arg]){*[expr]}
 def p_deff(p):
     """deff : type ID LPAREN s_args RPAREN LBRACE body RBRACE"""
-    p[0] = ast.FDEF(p[1], p[2], p[4], p[7])
+    p[0] = FDEF(p[1], p[2], p[4], p[7])
 
 
 # for special case(no argument)
