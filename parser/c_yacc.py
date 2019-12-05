@@ -255,62 +255,74 @@ def p_argexpr_list_2(p):
 # unary expression
 def p_unaryexpr_1(p):
     """unaryexpr : postexpr"""
-    pass
+    p[0] = p[1]
+
+
+__unaryexpr_2_map = {
+    c_lex.t_INC: PRE_INC,
+    c_lex.t_DEC: PRE_DEC,
+    c_lex.t_AND: ADDR,
+    c_lex.t_TIMES: DEREF,
+}
 
 
 def p_unaryexpr_2(p):
     """unaryexpr : INC unaryexpr
                  | DEC unaryexpr
                  | AND unaryexpr
-                 | TIMES unaryexpr
-                 | PLUS unaryexpr
+                 | TIMES unaryexpr"""
+    p[0] = __unaryexpr_2_map[p[1]](p[2])
+
+
+def p_unaryexpr_3(p):
+    """unaryexpr : PLUS unaryexpr
                  | MINUS unaryexpr
                  | NOT unaryexpr
                  | LNOT unaryexpr"""
-    pass
+    p[0] = UNOP(p[1], p[2])
 
 
 # multiplicative_expression
 def p_multexpr_1(p):
     """multexpr : unaryexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_multexpr_2(p):
     """multexpr : multexpr TIMES unaryexpr
                 | multexpr DIVIDE unaryexpr
                 | multexpr MOD unaryexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # additive_expression
 def p_addexpr_1(p):
     """addexpr : multexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_addexpr_2(p):
     """addexpr : addexpr PLUS multexpr
                | addexpr MINUS multexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # shift_expression
 def p_shiftexpr_1(p):
     """shiftexpr : addexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_shiftexpr_2(p):
     """shiftexpr : shiftexpr LSHIFT addexpr
                  | shiftexpr RSHIFT addexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # relational_expression
 def p_relexpr_1(p):
     """relexpr : shiftexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_relexpr_2(p):
@@ -318,92 +330,94 @@ def p_relexpr_2(p):
                | relexpr GE shiftexpr
                | relexpr LEQ shiftexpr
                | relexpr GEQ shiftexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # equality_expression
 def p_eqexpr_1(p):
     """eqexpr : relexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_eqexpr_2(p):
     """eqexpr : eqexpr EQ relexpr
               | eqexpr NE relexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # and_expression
 def p_andexpr_1(p):
     """andexpr : eqexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_andexpr_2(p):
     """andexpr : andexpr AND eqexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # exclusive_or_expression
 def p_xorexpr_1(p):
     """xorexpr : andexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_xorexpr_2(p):
     """xorexpr : xorexpr XOR andexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # inclusive_or_expression
 def p_orexpr_1(p):
     """orexpr : xorexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_orexpr_2(p):
     """orexpr : orexpr OR xorexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # logical_and_expression
 def p_landexpr_1(p):
     """landexpr : orexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_landexpr_2(p):
     """landexpr : landexpr LAND orexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # logical_or_expression
 def p_lorexpr_1(p):
     """lorexpr : landexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_lorexpr_2(p):
     """lorexpr : lorexpr LOR landexpr"""
-    pass
+    p[0] = BINOP(p[1], p[2], p[3])
 
 
 # expression
 def p_expr_1(p):
     """expr : lorexpr"""
-    pass
+    p[0] = p[1]
 
 
 def p_expr_2(p):
     """expr : postexpr assign_op expr"""
-    # TODO : Handle postexpr as lvalue (ID or ID LBRACK expr_many RBRACK)
-    #      : If not, throw exception
-    pass
- 
+    # Handle postexpr as lvalue (ID or ID LBRACK expr_many RBRACK)
+    # If not, throw exception
+    if not (isinstance(p[1], ID) or (isinstance(p[1], SUBSCR) and isinstance(p[1].arrexpr, ID))):
+        raise SyntaxError
+    p[0] = ASSIGN(p[1], p[2], p[3])
+
 
 def p_expr_3(p):
     """expr : TIMES unaryexpr assign_op expr"""
-    pass
+    p[0] = ASSIGN(DEREF(p[2]), p[3], p[4])
 
 
 # assignment_operator
@@ -419,7 +433,7 @@ def p_assign_op(p):
                  | XOR_ASSIGN
                  | LSHIFT_ASSIGN
                  | RSHIFT_ASSIGN"""
-    pass
+    p[0] = p[1][:-1]
 
 
 def p_expr_many_1(p):

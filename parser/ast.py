@@ -189,6 +189,67 @@ class POST_DEC(EXPR):
         return 'POST_DEC(%s)' % self.expr
 
 
+class PRE_INC(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'PRE_INC(%s)' % self.expr
+
+
+class PRE_DEC(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'PRE_DEC(%s)' % self.expr
+
+
+class ADDR(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'ADDR(%s)' % self.expr
+
+
+class DEREF(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'DEREF(%s)' % self.expr
+
+
+class UNOP(EXPR):
+    def __init__(self, op, expr):
+        self.op = op
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'UNOP(%s, %s)' % (self.op, self.expr)
+
+
+class BINOP(EXPR):
+    def __init__(self, lexpr, op, rexpr):
+        self.lexpr = lexpr
+        self.op = op
+        self.rexpr = rexpr
+    
+    def __repr__(self):
+        return 'BINOP(%s, %s, %s)' % (self.lexpr, self.op, self.rexpr)
+
+
+class ASSIGN(EXPR):
+    def __init__(self, lhs, op, rhs):
+        self.lhs = lhs
+        self.op = op
+        self.rhs = rhs
+    
+    def __repr__(self):
+        return 'ASSIGN(%s, %s, %s)' % (self.lhs, self.op, self.rhs)
+
+
 # CONSTant values
 # val: value, string
 class CONST(EXPR):
