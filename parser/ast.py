@@ -144,7 +144,7 @@ class VDEFID(AST):
         self.array_sz = array_sz  # None for non-array
     
     def __repr__(self):
-        return 'LVALUE(%s, %d, %s)' % (self.name, self.ptr_cnt, self.array_sz)
+        return 'VDEFID(%s, %d, %s)' % (self.name, self.ptr_cnt, self.array_sz)
 
 
 class ID(EXPR):
