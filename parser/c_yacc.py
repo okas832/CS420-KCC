@@ -69,7 +69,7 @@ def p_array_1(p):
 def p_array_2(p):
     """array : LBRACK IVAL RBRACK"""
     # Never negative, since IVAL >= 0
-    p[0] = p[2]
+    p[0] = int(p[2])
 
 
 # type id([arg] *[,arg]){*[expr]}
@@ -485,14 +485,12 @@ def p_empty(p):
     pass
 
 
+def AST_YACC(code):
+    return yacc.parse(code, tracking=True)
+
+
 yacc.yacc()
 if __name__ == "__main__":
     with open("input.c", "r") as f:
-        result = yacc.parse(f.read(), tracking=True)
+        result = AST_YACC(f.read())
     print(result)
-
-
-
-
-
-

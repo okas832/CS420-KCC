@@ -1,4 +1,7 @@
 int v1=1, v2=1;
+float i2f = 5;
+int f2i = 5.678;
+//char multi_cast = 2 * 3.4; /// TODO
 int arr[2], *ptr1, **ptr2, *ptr_arr[123];
 
 int a(void) {

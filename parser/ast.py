@@ -52,6 +52,9 @@ class STMT(AST):
 
 # EXPRession
 class EXPR(AST):
+    def __init__(self):
+        self.type = None  # set at AST_TYPE() -> type_resolve()
+
     def __add__(self, rhs):
         if not isinstance(rhs, EXPR):
             raise TypeError('Expected EXPR, but %s comes.' % (type(rhs)))
@@ -142,7 +145,7 @@ class IFELSE(STMT):
         return 'IFELSE(%s, %s, %s)' % (self.cond, self.if_stmt, self.else_stmt)
 
 
-# Viable DEFinition ID (id_adv [+ array])
+# Varible DEFinition ID (id_adv [+ array])
 # name : variable name
 # ptr_cnt : number of '*'s, int
 # array_sz : array size, int >= 0. None for non-array variable
@@ -288,3 +291,38 @@ class SVAL(CONST):
 class CVAL(CONST):
     def __repr__(self):
         return 'CVAL(%s)' % self.val
+
+
+# char -> int
+class C2I(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'C2I(%s)' % self.expr
+
+
+# int -> char
+class I2C(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'I2C(%s)' % self.expr
+
+
+# int -> float
+class I2F(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'I2F(%s)' % self.expr
+
+# float -> int
+class F2I(EXPR):
+    def __init__(self, expr):
+        self.expr = expr
+    
+    def __repr__(self):
+        return 'F2I(%s)' % self.expr
