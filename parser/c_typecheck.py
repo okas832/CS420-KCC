@@ -3,9 +3,31 @@ from ctype import *
 from c_yacc import AST_YACC
 
 
+def find_id(name, genv, lenv):
+    for local_scope in reversed(lenv):
+        if name in local_scope:
+            return local_scope[name]
+    if name in genv:
+        return genv[name]
+    else:
+        raise SyntaxError("'%s' undeclared (first use in this function)" % name)
+
+
 def type_resolve(expr, genv, lenv):
-    ## TODO: remaining nodes ##
-    if isinstance(expr, CALL):
+    if isinstance(expr, ID):
+        expr.type = find_id(expr.name, genv, lenv)
+    elif isinstance(expr, SUBSCR):
+        arr_type = type_resolve(expr.arrexpr, genv, lenv)
+        if type(arr_type) not in [TPtr, TArr]:
+            raise TypeError("subscripted value is neither array nor pointer")
+        idx_type = type_resolve(expr.idxexpr, genv, lenv)
+        if type(arr_type) not in [TChar, TInt]:
+            raise TypeError("array subscript is not an integer")
+        if type(arr_type) is TPtr:
+            expr.type = arr_type.deref_type
+        else:
+            expr.type = arr_type.elem_type
+    elif isinstance(expr, CALL):
         func_type = type_resolve(expr.funcexpr, genv, lenv)
         if not isinstance(func_type, TFunc):
             raise TypeError("called object is not a function or function pointer")
@@ -18,7 +40,7 @@ def type_resolve(expr, genv, lenv):
     elif isinstance(expr, ADDR):
         lvalue_type = type_resolve(expr.expr, genv, lenv)
         if not (isinstance(expr.expr, ID) or isinstance(expr.expr, DEREF) or \
-            (isinstance(expr.expr, SUBSCR) and isinstance(expr.expr.arrexpr, ID))):
+            (isinstance(expr.expr, SUBSCR) and isinstance(expr.expr.arrexpr, ID))):  # all possible forms of lvalue
             raise TypeError("lvalue required as unary '&' operand")
         expr.type = TPtr(lvalue_type)
     elif isinstance(expr, DEREF):

@@ -31,19 +31,6 @@ class TPtr(CType):
         return super().__eq__(rhs) and self.deref_type == rhs.deref_type
 
 
-class TFunc(CType):
-    def __init__(self, ret_type, arg_types):
-        self.ret_type = ret_type
-        self.arg_types = arg_types
-    
-    def __repr__(self):
-        return '%s (%s)' % (self.ret_type, ', '.join(str(at) for at in self.arg_types))
-    
-    def __eq__(self, rhs):
-        return super().__eq__(rhs) and self.ret_type == rhs.ret_type and \
-            self.arg_types == rhs.arg_types
-
-
 class TArr(CType):
     def __init__(self, elem_type, arr_size):
         self.elem_type = elem_type
@@ -55,6 +42,19 @@ class TArr(CType):
     def __eq__(self, rhs):
         return super().__eq__(rhs) and self.elem_type == rhs.elem_type and \
             self.arr_size == rhs.arr_size
+
+
+class TFunc(CType):
+    def __init__(self, ret_type, arg_types):
+        self.ret_type = ret_type
+        self.arg_types = arg_types
+    
+    def __repr__(self):
+        return '%s (%s)' % (self.ret_type, ', '.join(str(at) for at in self.arg_types))
+    
+    def __eq__(self, rhs):
+        return super().__eq__(rhs) and self.ret_type == rhs.ret_type and \
+            self.arg_types == rhs.arg_types
 
 
 # char -> int
