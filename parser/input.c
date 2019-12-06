@@ -25,4 +25,11 @@ int main(void)
             1;
         else
             d(5, &f);
+    
+    if (a /*this is some
+    comment*/)
+        if (b)
+            b; // this is another comment // //
+        else
+            a;
 }
