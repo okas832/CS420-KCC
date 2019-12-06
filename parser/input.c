@@ -2,7 +2,7 @@ int v1=1, v2=1;
 float i2f = 5;
 int f2i = 5.678;
 char ch = 'A';
-char multi_cast = (4 - 1 * 2 / (123 % 4) & 0x12 | 0x34 ^ 0x56 + (1 << 2) + (345 >> 6) + (1 && 2) - (3 || 4)) + 2.3; /// TODO
+char multi_cast = (4 - 1 * 2 / (123 % 4) & 0x12 | 0x34 ^ 0x56 + (1 << 2) + (345 >> 6) + (1 && 2) - (3 || 4)) + 2.3;
 int arr[2], *ptr1, **ptr2, *ptr_arr[123];
 
 int a(void) {

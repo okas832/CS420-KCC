@@ -12,7 +12,7 @@ def type_resolve(expr, genv, lenv):
         if len(expr.argexprs) != len(func_type.arg_types):
             raise TypeError("too %s arguments to function" % ("few" if len(expr.argexprs) < len(func_type.arg_types) else "many"))
         for ae_idx, argexpr in enumerate(expr.argexprs):
-            arg_type = type_resolver(argexpr, genv, lenv)
+            arg_type = type_resolve(argexpr, genv, lenv)
             expr.argexprs[ae_idx] = cast(argexpr, func_type.arg_types[ae_idx])
         expr.type = func_type.ret_type
     elif isinstance(expr, ADDR):
