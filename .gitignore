@@ -1,3 +1,7 @@
+parser/parser.out
+parser/parsetab.py
+
+
 ### macOS ###
 # General
 .DS_Store
