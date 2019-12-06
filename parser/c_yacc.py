@@ -234,13 +234,9 @@ def p_postexpr_4(p):
 
 
 def p_postexpr_5(p):
-    """postexpr : postexpr INC"""
-    p[0] = POST_INC(p[1])
-
-
-def p_postexpr_6(p):
-    """postexpr : postexpr DEC"""
-    p[0] = POST_DEC(p[1])
+    """postexpr : postexpr INC
+                | postexpr DEC"""
+    p[0] = POSTOP(p[1], p[2])
 
 
 def p_argexpr_list_1(p):
@@ -259,28 +255,24 @@ def p_unaryexpr_1(p):
     p[0] = p[1]
 
 
-__unaryexpr_2_map = {
-    c_lex.t_INC: PRE_INC,
-    c_lex.t_DEC: PRE_DEC,
-    c_lex.t_AND: ADDR,
-    c_lex.t_TIMES: DEREF,
-}
-
-
 def p_unaryexpr_2(p):
-    """unaryexpr : INC unaryexpr
-                 | DEC unaryexpr
-                 | AND unaryexpr
-                 | TIMES unaryexpr"""
-    p[0] = __unaryexpr_2_map[p[1]](p[2])
+    """unaryexpr : AND unaryexpr"""
+    p[0] = ADDR(p[2])
 
 
 def p_unaryexpr_3(p):
-    """unaryexpr : PLUS unaryexpr
+    """unaryexpr : TIMES unaryexpr"""
+    p[0] = DEREF(p[2])
+
+
+def p_unaryexpr_4(p):
+    """unaryexpr : INC unaryexpr
+                 | DEC unaryexpr
+                 | PLUS unaryexpr
                  | MINUS unaryexpr
                  | NOT unaryexpr
                  | LNOT unaryexpr"""
-    p[0] = UNOP(p[1], p[2])
+    p[0] = PREOP(p[1], p[2])
 
 
 # multiplicative_expression
@@ -412,13 +404,19 @@ def p_expr_2(p):
     # Handle postexpr as lvalue (ID or ID LBRACK expr_many RBRACK)
     # If not, throw exception
     if not (isinstance(p[1], ID) or (isinstance(p[1], SUBSCR) and isinstance(p[1].arrexpr, ID))):
-        raise SyntaxError
-    p[0] = ASSIGN(p[1], p[2], p[3])
+        raise SyntaxError("lvalue required as left operand of assignment")
+    if p[2] == "":
+        p[0] = ASSIGN(p[1], p[3])
+    else:
+        p[0] = ASSIGN(p[1], BINOP(p[1], p[2], p[3]))
 
 
 def p_expr_3(p):
     """expr : TIMES unaryexpr assign_op expr"""
-    p[0] = ASSIGN(DEREF(p[2]), p[3], p[4])
+    if p[3] == "":
+        p[0] = ASSIGN(DEREF(p[2]), p[4])
+    else:
+        p[0] = ASSIGN(DEREF(p[2]), BINOP(DEREF(p[2]), p[3], p[4]))
 
 
 # assignment_operator
