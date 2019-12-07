@@ -46,8 +46,6 @@ tokens = [
     'INC',
     'DEC',
 
-    'TENARY',
-
     'LPAREN',
     'RPAREN',
     'LBRACK',
@@ -55,16 +53,13 @@ tokens = [
     'LBRACE',
     'RBRACE',
     'COMMA',
-    'PERIOD',
     'SEMICOL',
-    'COLON',
 ]
 
 reserved = {
     'break'    : 'BREAK',
     'char'     : 'CHAR',
     'continue' : 'CONTINUE',
-    'do'       : 'DO',
     'else'     : 'ELSE',
     'float'    : 'FLOAT',
     'for'      : 'FOR',
@@ -126,8 +121,6 @@ t_RSHIFT_ASSIGN = r'>>='
 t_INC = r'\+\+'
 t_DEC = r'--'
 
-t_TENARY = r'\?'
-
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
 t_LBRACK  = r'\['
@@ -135,9 +128,7 @@ t_RBRACK  = r'\]'
 t_LBRACE  = r'\{'
 t_RBRACE  = r'\}'
 t_COMMA   = r','
-t_PERIOD  = r'\.'
 t_SEMICOL = r';'
-t_COLON   = r':'
 
 
 def t_ID(t):
