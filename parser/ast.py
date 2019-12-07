@@ -32,7 +32,7 @@ class VDEF(AST):
 # Function DEFine
 # type : return type
 # name : function name
-# arg : argument (name, type) pair
+# arg : argument (type_name, vdefid) pair
 # body : statements
 class FDEF(AST):
     def __init__(self, type, name, arg, body):
@@ -52,6 +52,9 @@ class STMT(AST):
 
 # EXPRession
 class EXPR(AST):
+    def __init__(self, type = None):
+        self.type = type  # set at AST_TYPE() -> type_resolve()
+
     def __add__(self, rhs):
         if not isinstance(rhs, EXPR):
             raise TypeError('Expected EXPR, but %s comes.' % (type(rhs)))
@@ -142,7 +145,7 @@ class IFELSE(STMT):
         return 'IFELSE(%s, %s, %s)' % (self.cond, self.if_stmt, self.else_stmt)
 
 
-# Viable DEFinition ID (id_adv [+ array])
+# Varible DEFinition ID (id_adv [+ array])
 # name : variable name
 # ptr_cnt : number of '*'s, int
 # array_sz : array size, int >= 0. None for non-array variable
@@ -182,36 +185,14 @@ class CALL(EXPR):
         return 'CALL(%s, %s)' % (self.funcexpr, self.argexprs)
 
 
-class POST_INC(EXPR):
-    def __init__(self, expr):
+# Unary postfix operator
+class POSTOP(EXPR):
+    def __init__(self, expr, op):
         self.expr = expr
+        self.op = op
     
     def __repr__(self):
-        return 'POST_INC(%s)' % self.expr
-
-
-class POST_DEC(EXPR):
-    def __init__(self, expr):
-        self.expr = expr
-    
-    def __repr__(self):
-        return 'POST_DEC(%s)' % self.expr
-
-
-class PRE_INC(EXPR):
-    def __init__(self, expr):
-        self.expr = expr
-    
-    def __repr__(self):
-        return 'PRE_INC(%s)' % self.expr
-
-
-class PRE_DEC(EXPR):
-    def __init__(self, expr):
-        self.expr = expr
-    
-    def __repr__(self):
-        return 'PRE_DEC(%s)' % self.expr
+        return 'POSTOP(%s, "%s")' % (self.expr, self.op)
 
 
 class ADDR(EXPR):
@@ -230,13 +211,14 @@ class DEREF(EXPR):
         return 'DEREF(%s)' % self.expr
 
 
-class UNOP(EXPR):
+# Unary prefix operators
+class PREOP(EXPR):
     def __init__(self, op, expr):
         self.op = op
         self.expr = expr
     
     def __repr__(self):
-        return 'UNOP("%s", %s)' % (self.op, self.expr)
+        return 'PREOP("%s", %s)' % (self.op, self.expr)
 
 
 class BINOP(EXPR):
@@ -250,13 +232,12 @@ class BINOP(EXPR):
 
 
 class ASSIGN(EXPR):
-    def __init__(self, lhs, op, rhs):
+    def __init__(self, lhs, rhs):
         self.lhs = lhs
-        self.op = op
         self.rhs = rhs
     
     def __repr__(self):
-        return 'ASSIGN(%s, "%s", %s)' % (self.lhs, self.op, self.rhs)
+        return 'ASSIGN(%s, %s)' % (self.lhs, self.rhs)
 
 
 # CONSTant values
@@ -269,22 +250,22 @@ class CONST(EXPR):
 # Integer VALue
 class IVAL(CONST):
     def __repr__(self):
-        return 'IVAL(%s)' % self.val
+        return 'IVAL("%s")' % self.val
 
 
 # Float VALue
 class FVAL(CONST):
     def __repr__(self):
-        return 'FVAL(%s)' % self.val
+        return 'FVAL("%s")' % self.val
 
 
 # String VALue
 class SVAL(CONST):
     def __repr__(self):
-        return 'SVAL(%s)' % self.val
+        return 'SVAL("%s")' % self.val
 
 
 # Char VALue
 class CVAL(CONST):
     def __repr__(self):
-        return 'CVAL(%s)' % self.val
+        return 'CVAL("%s")' % self.val
