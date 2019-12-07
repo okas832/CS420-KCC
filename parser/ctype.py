@@ -121,6 +121,18 @@ class P2A(EXPR):
         return 'P2A(%s)' % self.expr
 
 
+# arr -> arr (if successful, type[a] -> type[b] where a != b)
+class A2A(EXPR):
+    def __init__(self, expr, arr_type):
+        if expr.type.elem_type != arr_type.elem_type:
+            raise TypeError("invalid cast from %s to %s" % (expr.type, arr_type))
+        self.expr = expr
+        super().__init__(arr_type)
+    
+    def __repr__(self):
+        return 'A2A(%s)' % self.expr
+
+
 typestr_map = {
     'int'   : TInt(),
     'float' : TFloat(),
@@ -138,6 +150,7 @@ __cast_rules = [
     ((TFloat, TChar), [F2I, I2C]),
     ((TArr, TPtr), [A2P]),
     ((TPtr, TArr), [P2A]),
+    ((TArr, TArr), [A2A]),
 ]
 
 
