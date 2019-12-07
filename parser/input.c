@@ -18,6 +18,7 @@ int d(int arg1, float *arg2)
     arg1++;
     *arg2 = 2.3;
 }
+int e(int *arg1, int arg2[10]) { }
 
 int main(void)
 {

@@ -103,7 +103,8 @@ def p_args_3(p):
 
 
 def p_arg(p):
-    """arg : type id_adv"""
+    """arg : type id_adv array"""
+    p[2].array_sz = p[3]
     p[0] = (p[1], p[2])
 
 

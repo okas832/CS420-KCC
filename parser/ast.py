@@ -32,7 +32,7 @@ class VDEF(AST):
 # Function DEFine
 # type : return type
 # name : function name
-# arg : argument (name, type) pair
+# arg : argument (type_name, vdefid) pair
 # body : statements
 class FDEF(AST):
     def __init__(self, type, name, arg, body):
