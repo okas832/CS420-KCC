@@ -483,12 +483,16 @@ def p_empty(p):
     """empty :"""
     pass
 
+def p_error(p):
+    stack_state_str = ' '.join([symbol.type for symbol in c_parser.symstack][1:])
+    print('Syntax Error.\nParser State : {}\nStack state : {}\nComes : {}'.format(c_parser.state, stack_state_str, p))
+    exit(-1)
 
 def AST_YACC(code):
     return yacc.parse(code, tracking=True)
 
+c_parser = yacc.yacc()
 
-yacc.yacc()
 if __name__ == "__main__":
     with open("input.c", "r") as f:
         result = AST_YACC(f.read())
