@@ -59,7 +59,7 @@ class TFunc(CType):
 
 # char -> int
 class C2I(EXPR):
-    def __init__(self, expr):
+    def __init__(self, expr, _):
         self.expr = expr
         super().__init__(TInt())
     
@@ -69,7 +69,7 @@ class C2I(EXPR):
 
 # int -> char
 class I2C(EXPR):
-    def __init__(self, expr):
+    def __init__(self, expr, _):
         self.expr = expr
         super().__init__(TChar())
     
@@ -79,7 +79,7 @@ class I2C(EXPR):
 
 # int -> float
 class I2F(EXPR):
-    def __init__(self, expr):
+    def __init__(self, expr, _):
         self.expr = expr
         super().__init__(TFloat())
     
@@ -89,12 +89,24 @@ class I2F(EXPR):
 
 # float -> int
 class F2I(EXPR):
-    def __init__(self, expr):
+    def __init__(self, expr, _):
         self.expr = expr
         super().__init__(TInt())
     
     def __repr__(self):
         return 'F2I(%s)' % self.expr
+
+
+# arr -> ptr
+class A2P(EXPR):
+    def __init__(self, expr, ptr_type):
+        if expr.type.elem_type != ptr_type.deref_type:
+            raise TypeError("invalid cast from %s to %s" % (expr.type, ptr_type))
+        self.expr = expr
+        super().__init__(ptr_type)
+    
+    def __repr__(self):
+        return 'A2P(%s)' % self.expr
 
 
 typestr_map = {
@@ -106,13 +118,13 @@ typestr_map = {
 
 # (from_type, to_type) -> cast*
 __cast_rules = [
-    ((TChar(), TInt()), [C2I]),
-    ((TInt(), TChar()), [I2C]),
-    ((TInt(), TFloat()), [I2F]),
-    ((TFloat(), TInt()), [F2I]),
-    ((TChar(), TFloat()), [C2I, I2F]),
-    ((TFloat(), TChar()), [F2I, I2C]),
-    # (TArr, TPtr)
+    ((TChar, TInt), [C2I]),
+    ((TInt, TChar), [I2C]),
+    ((TInt, TFloat), [I2F]),
+    ((TFloat, TInt), [F2I]),
+    ((TChar, TFloat), [C2I, I2F]),
+    ((TFloat, TChar), [F2I, I2C]),
+    ((TArr, TPtr), [A2P]),
 ]
 
 
@@ -134,9 +146,9 @@ def cast(expr, to_type):
         return expr
     
     for cast_dir, cast_order in __cast_rules:
-        if from_type == cast_dir[0] and to_type == cast_dir[1]:
+        if type(from_type) == cast_dir[0] and type(to_type) == cast_dir[1]:
             for caster in cast_order:
-                expr = caster(expr)
+                expr = caster(expr, to_type)
             return expr
     
     raise TypeError("invalid cast from %s to %s" % (from_type, to_type))

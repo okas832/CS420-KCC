@@ -4,6 +4,7 @@ int f2i = 5.678;
 char ch = 'A';
 char multi_cast = (4 - 1 * 2 / (123 % 4) & 0x12 | 0x34 ^ 0x56 + (1 << 2) + (345 >> 6) + (1 && 2) - (3 || 4)) + 2.3;
 int arr[2], *ptr1, **ptr2, *ptr_arr[123];
+int *arr_ptr = arr;  // cast int[2] to *int
 
 int a(void) {
     ;
