@@ -160,7 +160,7 @@ def AST_TYPE(ast):
                 for _ in range(vdefid.ptr_cnt):
                     arg_type = TPtr(arg_type)
                 if vdefid.array_sz is not None:
-                    arg_type = TArr(arg_type, vdefid.array_sz)
+                    arg_type = TPtr(arg_type)  # pointer decay
                 arg_types.append(arg_type)
                 args_env[vdefid.name] = arg_type
 
