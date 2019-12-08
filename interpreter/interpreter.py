@@ -2,7 +2,7 @@ from ast import *
 from ctype import *
 
 
-class VALUE(object):
+class VALUE():
     def __init__(self, value, ctype):
         assert isinstance(ctype, CType)
         if ctype == TFloat():
@@ -18,9 +18,17 @@ class VALUE(object):
         self.ctype = ctype
 
     def __repr__(self):
-        if isinstance(self.ctype, TVoid):
+        if self.ctype == TVoid():
             return "(void)"
         return "(%s) %d" % (self.ctype, self.value)
+
+
+class VPTR(VALUE):
+    def __init__(self, deref_value):
+        self.deref_value = deref_value
+
+    def __repr__(self):
+        return "&%s" % self.value
 
 
 def id_resolve(expr, genv, lenv):
@@ -77,7 +85,7 @@ def exec_binop(expr, genv, lenv):
     elif expr.op == "*":
         result = lhs.value * rhs.value
     elif expr.op == "/":
-        if isinstance(ctype, TFloat):
+        if ctype == TFloat():
             result = lhs.value / rhs.value
         else:
             result = lhs.value // rhs.value
@@ -101,17 +109,48 @@ def exec_binop(expr, genv, lenv):
         result = lhs.value == rhs.value
     elif expr.op == "!=":
         result = lhs.value != rhs.value
+    elif expr.op == "<":
+        result = lhs.value < rhs.value
+    elif expr.op == ">":
+        result = lhs.value > rhs.value
+    elif expr.op == "<=":
+        result = lhs.value <= rhs.value
+    elif expr.op == ">=":
+        result = lhs.value >= rhs.value
+
     else:
         raise ValueError("Not Implemented Operator '%s'" % expr.op)
 
     return VALUE(result, ctype)
 
 
+def exec_assign(expr, genv, lenv):
+    assert isinstance(expr, ASSIGN)
+
+    rhs = exec_expr(expr.rhs)
+    # rhs = exec_expr(expr.rhs)
+    pass
+
+
 def exec_expr(expr, genv, lenv):
-    if isinstance(expr, ID):
+    if isinstance(expr, IVAL):
+        return VALUE(expr.val, TInt())
+    elif isinstance(expr, FVAL):
+        return VALUE(expr.val, TFloat())
+    elif isinstance(expr, SVAL):
+        pass
+    elif isinstance(expr, CVAL):
+        return VALUE(expr.val, TChar())
+    elif isinstance(expr, ID):
         return id_resolve(expr, genv, lenv)
     elif isinstance(expr, TEXPR):
         return exec_cast(expr, genv, lenv)
+    elif isinstance(expr, ADDR):
+        return VPTR(exec_expr(expr, genv, lenv))
+    elif isinstance(expr, DEREF):
+        val = exec_expr(expr.expr, genv, lenv)
+        assert isinstance(val, VPTR)
+        return val.deref_value
     elif isinstance(expr, PREOP):
         pass
     elif isinstance(expr, POSTOP):
