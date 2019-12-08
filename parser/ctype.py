@@ -1,5 +1,6 @@
 from ast import *
 
+
 class CType():
     def __eq__(self, rhs):
         return type(self) is type(rhs)
@@ -28,10 +29,10 @@ class TChar(CType):
 class TPtr(CType):
     def __init__(self, deref_type):
         self.deref_type = deref_type
-    
+
     def __repr__(self):
         return '*%s' % self.deref_type
-    
+
     def __eq__(self, rhs):
         return super().__eq__(rhs) and self.deref_type == rhs.deref_type
 
@@ -40,10 +41,10 @@ class TArr(CType):
     def __init__(self, elem_type, arr_size):
         self.elem_type = elem_type
         self.arr_size = arr_size
-    
+
     def __repr__(self):
         return '%s[%d]' % (self.elem_type, self.arr_size)
-    
+
     def __eq__(self, rhs):
         return super().__eq__(rhs) and self.elem_type == rhs.elem_type and \
             self.arr_size == rhs.arr_size
@@ -53,75 +54,79 @@ class TFunc(CType):
     def __init__(self, ret_type, arg_types):
         self.ret_type = ret_type
         self.arg_types = arg_types
-    
+
     def __repr__(self):
         return '%s (%s)' % (self.ret_type, ', '.join(str(at) for at in self.arg_types))
-    
+
     def __eq__(self, rhs):
         return super().__eq__(rhs) and self.ret_type == rhs.ret_type and \
             self.arg_types == rhs.arg_types
 
 
+class TEXPR(EXPR):
+    pass
+
+
 # char -> int
-class C2I(EXPR):
+class C2I(TEXPR):
     def __init__(self, expr, _):
         self.expr = expr
         super().__init__(TInt())
-    
+
     def __repr__(self):
         return 'C2I(%s)' % self.expr
 
 
 # int -> char
-class I2C(EXPR):
+class I2C(TEXPR):
     def __init__(self, expr, _):
         self.expr = expr
         super().__init__(TChar())
-    
+
     def __repr__(self):
         return 'I2C(%s)' % self.expr
 
 
 # int -> float
-class I2F(EXPR):
+class I2F(TEXPR):
     def __init__(self, expr, _):
         self.expr = expr
         super().__init__(TFloat())
-    
+
     def __repr__(self):
         return 'I2F(%s)' % self.expr
 
 
 # float -> int
-class F2I(EXPR):
+class F2I(TEXPR):
     def __init__(self, expr, _):
         self.expr = expr
         super().__init__(TInt())
-    
+
     def __repr__(self):
         return 'F2I(%s)' % self.expr
 
 
 # arr -> ptr
-class A2P(EXPR):
+class A2P(TEXPR):
     def __init__(self, expr, ptr_type):
         if expr.type.elem_type != ptr_type.deref_type:
             raise TypeError("invalid cast from %s to %s" % (expr.type, ptr_type))
         self.expr = expr
         super().__init__(ptr_type)
-    
+
     def __repr__(self):
         return 'A2P(%s)' % self.expr
 
 
 # ptr -> arr
-class P2A(EXPR):
+class P2A(TEXPR):
     def __init__(self, expr, arr_type):
         if expr.type.deref_type != arr_type.elem_type:
             raise TypeError("invalid cast from %s to %s" % (expr.type, arr_type))
         self.expr = expr
         super().__init__(arr_type)
-    
+
     def __repr__(self):
         return 'P2A(%s)' % self.expr
 
@@ -159,17 +164,17 @@ def max_prec(expr_1, expr_2, op):
 
 def cast(expr, to_type):
     assert isinstance(expr, EXPR)
-    
+
     from_type = expr.type
     if from_type == to_type:
         return expr
-    
+
     for cast_dir, cast_order in __cast_rules:
         if type(from_type) == cast_dir[0] and type(to_type) == cast_dir[1]:
             for caster in cast_order:
                 expr = caster(expr, to_type)
             return expr
-    
+
     raise TypeError("invalid cast from %s to %s" % (from_type, to_type))
 
 
@@ -188,9 +193,8 @@ def cast_unop(expr, op):
             raise TypeError("wrong type argument to bit-complement")
     else:  # op == "!"
         res_type = TInt()
-    
+
     return res_type
-        
 
 
 def cast_binop(expr_lhs, expr_rhs, op):
