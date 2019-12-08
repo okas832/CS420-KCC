@@ -19,6 +19,7 @@ int d(int arg1, float *arg2)
     *arg2 = 2.3;
 }
 int e(int *arg1, int arg2[10]) { }
+void ret_void() { }
 
 int main(void)
 {
@@ -51,4 +52,6 @@ int main(void)
     printf("%d\n", a);
     printf("%f\n", f);
     printf("%d\n", f);  // no type conversion @ AST_TYPE, intended behaviour
+
+    ret_void();
 }

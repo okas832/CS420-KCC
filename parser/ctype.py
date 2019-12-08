@@ -5,6 +5,11 @@ class CType():
         return type(self) is type(rhs)
 
 
+class TVoid(CType):
+    def __repr__(self):
+        return 'void'
+
+
 class TInt(CType):
     def __repr__(self):
         return 'int'
@@ -122,6 +127,7 @@ class P2A(EXPR):
 
 
 typestr_map = {
+    'void'  : TVoid(),
     'int'   : TInt(),
     'float' : TFloat(),
     'char'  : TChar(),
