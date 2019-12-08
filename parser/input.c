@@ -46,4 +46,9 @@ int main(void)
     e(&a, ptr1);
     e(&a, arr);
     e(&v2, arr2);
+
+    printf("abcde\n");
+    printf("%d\n", a);
+    printf("%f\n", f);
+    printf("%d\n", f);  // no type conversion @ AST_TYPE, intended behaviour
 }

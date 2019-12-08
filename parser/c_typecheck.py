@@ -30,15 +30,25 @@ def type_resolve(expr, genv, lenv):
         else:
             expr.type = arr_type.elem_type
     elif isinstance(expr, CALL):
-        func_type = type_resolve(expr.funcexpr, genv, lenv)
-        if not isinstance(func_type, TFunc):
-            raise TypeError("called object is not a function or function pointer")
-        if len(expr.argexprs) != len(func_type.arg_types):
-            raise SyntaxError("too %s arguments to function" % ("few" if len(expr.argexprs) < len(func_type.arg_types) else "many"))
-        for ae_idx, argexpr in enumerate(expr.argexprs):
-            arg_type = type_resolve(argexpr, genv, lenv)
-            expr.argexprs[ae_idx] = cast(argexpr, func_type.arg_types[ae_idx])
-        expr.type = func_type.ret_type
+        # printf as keyword, exceptional call w/ variadic arguments & no argument type casting
+        if isinstance(expr.funcexpr, ID) and expr.funcexpr.name == "printf":
+            if len(expr.argexprs) < 1:
+                raise SyntaxError("too few arguments to function")
+            type_resolve(expr.argexprs[0], genv, lenv)
+            expr.argexprs[0] = cast(expr.argexprs[0], TPtr(TChar()))
+            for argexpr in expr.argexprs[1:]:
+                arg_type = type_resolve(argexpr, genv, lenv)
+            expr.type = TInt()
+        else:
+            func_type = type_resolve(expr.funcexpr, genv, lenv)
+            if not isinstance(func_type, TFunc):
+                raise TypeError("called object is not a function or function pointer")
+            if len(expr.argexprs) != len(func_type.arg_types):
+                raise SyntaxError("too %s arguments to function" % ("few" if len(expr.argexprs) < len(func_type.arg_types) else "many"))
+            for ae_idx, argexpr in enumerate(expr.argexprs):
+                arg_type = type_resolve(argexpr, genv, lenv)
+                expr.argexprs[ae_idx] = cast(argexpr, func_type.arg_types[ae_idx])
+            expr.type = func_type.ret_type
     elif isinstance(expr, ADDR):
         lvalue_type = type_resolve(expr.expr, genv, lenv)
         if not (isinstance(expr.expr, ID) or isinstance(expr.expr, DEREF) or \
