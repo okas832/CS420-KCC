@@ -56,7 +56,7 @@ def command(cli, var):
     while True:
         index = history_main[t].var_find(var)
         if index == "no":
-            if history_main[t].scope == "block":
+            if history_main[t].scope != "function":
                 t = t - 1
                 continue
             else:
@@ -99,7 +99,7 @@ def change(var, line, value):
     while True:
         done = history_main[t].var_change(var, line, value)
         if done == "no":
-            if history_main[t].scope == "block":
+            if history_main[t].scope != "function":
                 t = t - 1
                 continue
             else:
