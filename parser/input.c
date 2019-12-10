@@ -20,6 +20,7 @@ int d(int arg1, float *arg2)
 }
 int e(int *arg1, int arg2[10]) { }
 void ret_void() { }
+int *ret_iptr() { }
 
 int main(void)
 {
@@ -60,4 +61,6 @@ int main(void)
 
     a = *arr;
     vptr = *vdptr;
+    vptr = *vdptr++;
+    a = ret_iptr()[0];
 }

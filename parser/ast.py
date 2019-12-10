@@ -42,7 +42,7 @@ class FDEF(AST):
         self.body = body
 
     def __repr__(self):
-        return 'FDEF("%s", "%s", %s, %s)' % (self.type, self.name, self.arg, self.body)
+        return 'FDEF("%s", %s, %s, %s)' % (self.type, self.name, self.arg, self.body)
 
 
 # STateMenT

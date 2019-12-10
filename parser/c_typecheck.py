@@ -20,7 +20,7 @@ def type_resolve(expr, env):
         if type(arr_type) not in [TPtr, TArr]:
             raise TypeError("subscripted value is neither array nor pointer")
         idx_type = type_resolve(expr.idxexpr, env)
-        if type(arr_type) not in [TChar, TInt]:
+        if type(idx_type) not in [TChar, TInt]:
             raise TypeError("array subscript is not an integer")
         if type(arr_type) is TPtr:
             expr.type = arr_type.deref_type
@@ -48,8 +48,7 @@ def type_resolve(expr, env):
             expr.type = func_type.ret_type
     elif isinstance(expr, ADDR):
         lvalue_type = type_resolve(expr.expr, env)
-        if not (isinstance(expr.expr, ID) or isinstance(expr.expr, DEREF) or \
-            (isinstance(expr.expr, SUBSCR) and isinstance(expr.expr.arrexpr, ID))):  # all possible forms of lvalue
+        if not is_lvalue(expr.expr):  # all possible forms of lvalue
             raise TypeError("lvalue required as unary '&' operand")
         expr.type = TPtr(lvalue_type)
     elif isinstance(expr, DEREF):
@@ -165,6 +164,8 @@ def AST_TYPE(ast):
             args_env = {}
 
             ret_type = typestr_map[define.type]
+            for _ in range(define.name.ptr_cnt):
+                ret_type = TPtr(ret_type)
             
             arg_types = []
             for type_name, vdefid in define.arg:
@@ -176,9 +177,9 @@ def AST_TYPE(ast):
                 arg_types.append(arg_type)
                 args_env[vdefid.name] = arg_type
 
-            if define.name in genv:
-                raise SyntaxError("redefinition of '%s'" % define.name)
-            genv[define.name] = TFunc(ret_type, arg_types)
+            if define.name.name in genv:
+                raise SyntaxError("redefinition of '%s'" % define.name.name)
+            genv[define.name.name] = TFunc(ret_type, arg_types)
 
             body_resolve(define.body, [genv, args_env], True)
     

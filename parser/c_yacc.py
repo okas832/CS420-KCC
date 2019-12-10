@@ -74,7 +74,7 @@ def p_array_2(p):
 
 # type id([arg] *[,arg]){*[expr]}
 def p_deff(p):
-    """deff : type ID LPAREN s_args RPAREN LBRACE body RBRACE"""
+    """deff : type id_adv LPAREN s_args RPAREN LBRACE body RBRACE"""
     p[0] = FDEF(p[1], p[2], p[4], p[7])
 
 

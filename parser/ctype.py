@@ -168,7 +168,7 @@ def cast(expr, to_type):
 def cast_unop(expr, op):
     if op in ["++", "--"]:
         res_type = expr.type
-        if isinstance(res_type, TArr):
+        if not is_lvalue(expr):
             raise TypeError("lvalue required as operand of %s" % op)
     elif op in ["+", "-"]:
         res_type = expr.type
@@ -206,3 +206,9 @@ def cast_binop(expr_lhs, expr_rhs, op):
     expr_rhs = cast(expr_rhs, cast_type)
 
     return (expr_lhs, expr_rhs, res_type)
+
+
+def is_lvalue(expr):
+    # all possible forms of lvalue
+    return (isinstance(expr, ID) or isinstance(expr, DEREF) or \
+        (isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID)))
