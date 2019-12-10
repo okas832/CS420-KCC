@@ -54,4 +54,6 @@ int main(void)
     printf("%d\n", f);  // no type conversion @ AST_TYPE, intended behaviour
 
     ret_void();
+
+    a = (f > b) + c;
 }

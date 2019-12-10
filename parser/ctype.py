@@ -186,18 +186,23 @@ def cast_unop(expr, op):
 
 def cast_binop(expr_lhs, expr_rhs, op):
     if op in ["+", "-", "*", "/"]:
-        res_type = max_prec(expr_lhs, expr_rhs, op)
+        cast_type = max_prec(expr_lhs, expr_rhs, op)
+        res_type = cast_type
     elif op in ["%", "&", "|", "^"]:
-        res_type = max_prec(expr_lhs, expr_rhs, op)
-        if res_type == TFloat():
+        cast_type = max_prec(expr_lhs, expr_rhs, op)
+        if cast_type == TFloat():
             raise TypeError("invalid types to binary operation '%s': %s, %s" % (op, expr_lhs.type, expr_rhs.type))
-    else:  # op in ["<<", ">>", "&&", "||"]
-        res_type = max_prec(expr_lhs, expr_rhs, op)
-        if res_type == TFloat():
+        res_type = cast_type
+    elif op in ["<<", ">>", "&&", "||"]:
+        cast_type = max_prec(expr_lhs, expr_rhs, op)
+        if cast_type == TFloat():
             raise TypeError("invalid types to binary operation '%s': %s, %s" % (op, expr_lhs.type, expr_rhs.type))
-        res_type = TInt()  # promote to TInt
+        res_type = cast_type = TInt()  # promote to TInt
+    else:  # op in ["<", ">", "<=", ">=", "==", "!="]
+        cast_type = max_prec(expr_lhs, expr_rhs, op)
+        res_type = TInt()  # bool is TInt
 
-    expr_lhs = cast(expr_lhs, res_type)
-    expr_rhs = cast(expr_rhs, res_type)
+    expr_lhs = cast(expr_lhs, cast_type)
+    expr_rhs = cast(expr_rhs, cast_type)
 
     return (expr_lhs, expr_rhs, res_type)
