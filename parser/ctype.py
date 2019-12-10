@@ -145,7 +145,7 @@ __cast_prec = [TChar(), TInt(), TFloat()]
 def max_prec(expr_1, expr_2, op):
     t1, t2 = expr_1.type, expr_2.type
     if t1 not in __cast_prec or t2 not in __cast_prec:
-        raise TypeError("invalid types to binary operation '%s': %s, %s" % (op, t1, t2))
+        raise TypeError("invalid operands to binary operation '%s': %s, %s" % (op, t1, t2))
     return __cast_prec[max(__cast_prec.index(t1), __cast_prec.index(t2))]
 
 
@@ -185,18 +185,34 @@ def cast_unop(expr, op):
 
 
 def cast_binop(expr_lhs, expr_rhs, op):
+    ## pointer arithmetics
+    expr_lhs_ = expr_lhs
+    expr_rhs_ = expr_rhs
+    if isinstance(expr_lhs_.type, TArr):
+        expr_lhs_ = cast(expr_lhs_, TPtr(expr_lhs_.type.elem_type))
+    if isinstance(expr_rhs_.type, TArr):
+        expr_rhs_ = cast(expr_rhs_, TPtr(expr_rhs_.type.elem_type))
+    if isinstance(expr_lhs_.type, TPtr):
+        if op == "-" and isinstance(expr_rhs_.type, TPtr):
+            if expr_lhs_.type != expr_rhs_.type:
+                raise TypeError("invalid operands to binary operation '%s': %s, %s" % (op, expr_lhs.type, expr_rhs.type))
+            return (expr_lhs_, expr_rhs_, TInt())
+        elif op == "+" and isinstance(expr_rhs_.type, TInt):
+            return (expr_lhs_, expr_rhs_, expr_lhs_.type)
+        # else, just pass through to next code for error handing
+
     if op in ["+", "-", "*", "/"]:
         cast_type = max_prec(expr_lhs, expr_rhs, op)
         res_type = cast_type
     elif op in ["%", "&", "|", "^"]:
         cast_type = max_prec(expr_lhs, expr_rhs, op)
         if cast_type == TFloat():
-            raise TypeError("invalid types to binary operation '%s': %s, %s" % (op, expr_lhs.type, expr_rhs.type))
+            raise TypeError("invalid operands to binary operation '%s': %s, %s" % (op, expr_lhs.type, expr_rhs.type))
         res_type = cast_type
     elif op in ["<<", ">>", "&&", "||"]:
         cast_type = max_prec(expr_lhs, expr_rhs, op)
         if cast_type == TFloat():
-            raise TypeError("invalid types to binary operation '%s': %s, %s" % (op, expr_lhs.type, expr_rhs.type))
+            raise TypeError("invalid operands to binary operation '%s': %s, %s" % (op, expr_lhs.type, expr_rhs.type))
         res_type = cast_type = TInt()  # promote to TInt
     else:  # op in ["<", ">", "<=", ">=", "==", "!="]
         cast_type = max_prec(expr_lhs, expr_rhs, op)
@@ -210,5 +226,4 @@ def cast_binop(expr_lhs, expr_rhs, op):
 
 def is_lvalue(expr):
     # all possible forms of lvalue
-    return (isinstance(expr, ID) or isinstance(expr, DEREF) or \
-        (isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID)))
+    return isinstance(expr, ID) or isinstance(expr, DEREF) or (isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID))

@@ -63,4 +63,6 @@ int main(void)
     vptr = *vdptr;
     vptr = *vdptr++;
     a = ret_iptr()[0];
+    ptr1 = &a + (&b - &c);
+    ptr1 = arr + a + (&b - arr);
 }
