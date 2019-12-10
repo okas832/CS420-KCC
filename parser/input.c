@@ -25,6 +25,7 @@ int main(void)
 {
     int a, b, c;
     float f;
+    void *vptr, **vdptr;
     a = f = c = 1;
     for (a = 0; a < b; a++, --b)
         if (a < b)
@@ -56,4 +57,7 @@ int main(void)
     ret_void();
 
     a = (f > b) + c;
+
+    a = *arr;
+    vptr = *vdptr;
 }
