@@ -12,8 +12,10 @@ def find_id(name, env):
         raise SyntaxError("'%s' undeclared (first use in this function)" % name)
 
 
-def type_resolve(expr, env):
+def type_resolve(expr, env, is_const = False):
     if isinstance(expr, ID):
+        if is_const:  # global var VDEF_resolve
+            raise SyntaxError("initializer element is not constant")
         expr.type = find_id(expr.name, env)
     elif isinstance(expr, SUBSCR):
         arr_type = type_resolve(expr.arrexpr, env)
@@ -89,7 +91,7 @@ def type_resolve(expr, env):
 
 # resolve & apply VDEF into target_env
 # target_env is element of env
-def VDEF_resolve(vdef, env, target_env):
+def VDEF_resolve(vdef, env, target_env, is_const = False):
     base_type = typestr_map[vdef.type]
             
     for def_i, vp in enumerate(vdef.pl):
@@ -102,7 +104,7 @@ def VDEF_resolve(vdef, env, target_env):
             var_type = TArr(var_type, vdefid.array_sz)
 
         if val is not None:
-            val_type = type_resolve(val, env)  # resolve val_type
+            val_type = type_resolve(val, env, is_const)  # resolve val_type
             vdef.pl[def_i] = (vdefid, cast(val, var_type))
         
         if vdefid.name in target_env:
@@ -158,7 +160,7 @@ def AST_TYPE(ast):
 
     for define in ast.defs:
         if isinstance(define, VDEF):
-            VDEF_resolve(define, [genv], genv)
+            VDEF_resolve(define, [genv], genv, is_const = True)
 
         else:  # isinstance(define, FDEF)
             args_env = {}
