@@ -52,7 +52,7 @@ class STMT(AST):
 
 # EXPRession
 class EXPR(AST):
-    def __init__(self, type = None):
+    def __init__(self, type=None):
         self.type = type  # set at AST_TYPE() -> type_resolve()
 
     def __add__(self, rhs):
@@ -71,7 +71,7 @@ class BODY(STMT):
     def __init__(self, defvs, stmts):
         self.defvs = defvs
         self.stmts = stmts
-    
+
     def __repr__(self):
         return 'BODY(%s, %s)' % (self.defvs, self.stmts)
 
@@ -90,7 +90,7 @@ class EMPTY_STMT(STMT):
 class EXPR_MANY(STMT, EXPR):
     def __init__(self, exprs):
         self.exprs = exprs
-    
+
     def __add__(self, rhs):
         if not isinstance(rhs, EXPR):
             raise TypeError('Expected EXPR, but %s comes.' % (type(rhs)))
@@ -98,7 +98,7 @@ class EXPR_MANY(STMT, EXPR):
             return EXPR_MANY(self.exprs + rhs.exprs)
         else:
             return EXPR_MANY(self.exprs + [rhs])
-    
+
     def __repr__(self):
         return 'EXPR_MANY(%s)' % self.exprs
 
@@ -110,7 +110,7 @@ class WHILE(STMT):
     def __init__(self, cond, body):
         self.cond = cond
         self.body = body
-    
+
     def __repr__(self):
         return 'WHILE(%s, %s)' % (self.cond, self.body)
 
@@ -126,7 +126,7 @@ class FOR(STMT):
         self.cond = cond
         self.update = update
         self.body = body
-    
+
     def __repr__(self):
         return 'FOR(%s, %s, %s, %s)' % (self.init, self.cond, self.update, self.body)
 
@@ -140,9 +140,37 @@ class IFELSE(STMT):
         self.cond = cond
         self.if_stmt = if_stmt
         self.else_stmt = else_stmt
-    
+
     def __repr__(self):
         return 'IFELSE(%s, %s, %s)' % (self.cond, self.if_stmt, self.else_stmt)
+
+
+# CONTINUE statement
+class CONTINUE(STMT):
+    def __init__(self):
+        pass
+
+    def __repr__(self):
+        return 'CONTINUE()'
+
+
+# BREAK statement
+class BREAK(STMT):
+    def __init__(self):
+        pass
+
+    def __repr__(self):
+        return 'BREAK()'
+
+
+# RETURN statement
+# expr: return value (None if return void)
+class RETURN(STMT):
+    def __init__(self, expr=None):
+        self.expr = expr
+
+    def __repr__(self):
+        return 'RETURN(%s)' % self.expr
 
 
 # Varible DEFinition ID (id_adv [+ array])
@@ -154,7 +182,7 @@ class VDEFID(AST):
         self.name = name
         self.ptr_cnt = ptr_cnt
         self.array_sz = array_sz
-    
+
     def __repr__(self):
         return 'VDEFID("%s", %d, %s)' % (self.name, self.ptr_cnt, self.array_sz)
 
@@ -162,7 +190,7 @@ class VDEFID(AST):
 class ID(EXPR):
     def __init__(self, name):
         self.name = name
-    
+
     def __repr__(self):
         return 'ID("%s")' % self.name
 
@@ -171,7 +199,7 @@ class SUBSCR(EXPR):
     def __init__(self, arrexpr, idxexpr):
         self.arrexpr = arrexpr
         self.idxexpr = idxexpr
-    
+
     def __repr__(self):
         return 'SUBSCR(%s, %s)' % (self.arrexpr, self.idxexpr)
 
@@ -180,7 +208,7 @@ class CALL(EXPR):
     def __init__(self, funcexpr, argexprs):
         self.funcexpr = funcexpr
         self.argexprs = argexprs
-    
+
     def __repr__(self):
         return 'CALL(%s, %s)' % (self.funcexpr, self.argexprs)
 
@@ -190,7 +218,7 @@ class POSTOP(EXPR):
     def __init__(self, expr, op):
         self.expr = expr
         self.op = op
-    
+
     def __repr__(self):
         return 'POSTOP(%s, "%s")' % (self.expr, self.op)
 
@@ -198,7 +226,7 @@ class POSTOP(EXPR):
 class ADDR(EXPR):
     def __init__(self, expr):
         self.expr = expr
-    
+
     def __repr__(self):
         return 'ADDR(%s)' % self.expr
 
@@ -206,7 +234,7 @@ class ADDR(EXPR):
 class DEREF(EXPR):
     def __init__(self, expr):
         self.expr = expr
-    
+
     def __repr__(self):
         return 'DEREF(%s)' % self.expr
 
@@ -216,7 +244,7 @@ class PREOP(EXPR):
     def __init__(self, op, expr):
         self.op = op
         self.expr = expr
-    
+
     def __repr__(self):
         return 'PREOP("%s", %s)' % (self.op, self.expr)
 
@@ -226,7 +254,7 @@ class BINOP(EXPR):
         self.lhs = lhs
         self.op = op
         self.rhs = rhs
-    
+
     def __repr__(self):
         return 'BINOP(%s, "%s", %s)' % (self.lhs, self.op, self.rhs)
 
@@ -235,7 +263,7 @@ class ASSIGN(EXPR):
     def __init__(self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
-    
+
     def __repr__(self):
         return 'ASSIGN(%s, %s)' % (self.lhs, self.rhs)
 
