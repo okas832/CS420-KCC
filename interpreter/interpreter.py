@@ -27,6 +27,9 @@ class VPTR(VALUE):
     def __init__(self, deref_value):
         self.deref_value = deref_value
 
+    def deref(self):
+        return self.deref_value
+
     def __repr__(self):
         return "&%s" % self.value
 
@@ -124,12 +127,27 @@ def exec_binop(expr, genv, lenv):
     return VALUE(result, ctype)
 
 
+def isnotinstance(a, b):
+    return not isinstance(a, b)
+
+
 def exec_assign(expr, genv, lenv):
     assert isinstance(expr, ASSIGN)
 
     rhs = exec_expr(expr.rhs)
-    # rhs = exec_expr(expr.rhs)
-    pass
+    if isinstance(expr.lhs, DEREF):
+        exec_expr(expr.lhs.expr)
+    if isinstance(expr.lhs, ID):
+        if expr.lhs.name in lenv:
+            lenv[expr.lhs.name] = rhs
+        elif expr.lhs.name in genv:
+            genv[expr.lhs.name] = rhs
+    if isinstance(expr.lhs, SUBSCR) and isinstance(expr.lhs.arrexpr, ID):
+        idx = exec_expr(expr.lhs.idxexpr)
+        if expr.lhs.arrexpr.name in lenv:
+            lenv[expr.lhs.arrexpr.name][idx] = rhs
+        elif expr.lhs.arrexpr.name in genv:
+            genv[expr.lhs.arrexpr.name][idx] = rhs
 
 
 def exec_expr(expr, genv, lenv):
@@ -149,16 +167,17 @@ def exec_expr(expr, genv, lenv):
         return VPTR(exec_expr(expr, genv, lenv))
     elif isinstance(expr, DEREF):
         val = exec_expr(expr.expr, genv, lenv)
-        assert isinstance(val, VPTR)
-        return val.deref_value
+        if not isinstance(val, VPTR):
+            raise ValueError("invalid type argument of unary '*' (have '%s')" % val.ctype)
+        return val.deref()
     elif isinstance(expr, PREOP):
         pass
     elif isinstance(expr, POSTOP):
         pass
     elif isinstance(expr, BINOP):
-        return calc_binop(expr, genv, lenv)
+        return exec_binop(expr, genv, lenv)
     elif isinstance(expr, ASSIGN):
-        pass
+        return exec_assign(expr, genv, lenv)
 
     raise ValueError("invalid expression '%s'" % expr)
 
