@@ -4,7 +4,7 @@ from c_yacc import AST_YACC
 
 
 def find_id(name, env):
-    # search evironment, inner to outer scope
+    # search environment, inner to outer scope
     for scope in reversed(env):
         if name in scope:
             return scope[name]
@@ -12,7 +12,7 @@ def find_id(name, env):
         raise SyntaxError("'%s' undeclared (first use in this function)" % name)
 
 
-def type_resolve(expr, env, is_const = False):
+def type_resolve(expr, env, is_const=False):
     if isinstance(expr, ID):
         if is_const:  # global var VDEF_resolve
             raise SyntaxError("initializer element is not constant")
@@ -91,12 +91,12 @@ def type_resolve(expr, env, is_const = False):
 
 # resolve & apply VDEF into target_env
 # target_env is element of env
-def VDEF_resolve(vdef, env, target_env, is_const = False):
+def VDEF_resolve(vdef, env, target_env, is_const=False):
     base_type = typestr_map[vdef.type]
-            
+
     for def_i, vp in enumerate(vdef.pl):
         vdefid, val = vp
-        
+
         var_type = base_type  # resolve var_type (VDEFID -> CType)
         for _ in range(vdefid.ptr_cnt):
             var_type = TPtr(var_type)
@@ -106,7 +106,7 @@ def VDEF_resolve(vdef, env, target_env, is_const = False):
         if val is not None:
             val_type = type_resolve(val, env, is_const)  # resolve val_type
             vdef.pl[def_i] = (vdefid, cast(val, var_type))
-        
+
         if vdefid.name in target_env:
             raise SyntaxError("redefinition of '%s'" % vdefid.name)
         target_env[vdefid.name] = var_type
@@ -138,10 +138,10 @@ def STMT_resolve(stmt, env):
         type_resolve(stmt, env)
 
 
-def body_resolve(body, env, func_body = False):
+def body_resolve(body, env, func_body=False):
     if not func_body:
         env.append({})  # scope of current body
-    
+
     # resolve VDEFs
     for vdef in body.defvs:
         VDEF_resolve(vdef, env, env[-1])
@@ -149,18 +149,18 @@ def body_resolve(body, env, func_body = False):
     # resolve STMTs
     for stmt in body.stmts:
         STMT_resolve(stmt, env)
-    
+
     del env[-1]
 
 
 def AST_TYPE(ast):
     assert isinstance(ast, GOAL)
-    
+
     genv = {}
 
     for define in ast.defs:
         if isinstance(define, VDEF):
-            VDEF_resolve(define, [genv], genv, is_const = True)
+            VDEF_resolve(define, [genv], genv, is_const=True)
 
         else:  # isinstance(define, FDEF)
             args_env = {}
@@ -168,7 +168,7 @@ def AST_TYPE(ast):
             ret_type = typestr_map[define.type]
             for _ in range(define.name.ptr_cnt):
                 ret_type = TPtr(ret_type)
-            
+
             arg_types = []
             for type_name, vdefid in define.arg:
                 arg_type = typestr_map[type_name]
@@ -184,7 +184,7 @@ def AST_TYPE(ast):
             genv[define.name.name] = TFunc(ret_type, arg_types)
 
             body_resolve(define.body, [genv, args_env], True)
-    
+
     return ast
 
 
