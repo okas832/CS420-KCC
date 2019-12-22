@@ -8,6 +8,9 @@
 - [x] Implement implicit type conversion
 - [x] Implement simple type checks
 - [ ] Check if conditionals expression must be casted to TInt
+- [x] Add JUMP statement for yacc (continue, break, return)
+- [ ] Check return type of function
+- [ ] Add typing rule for PREOP and POSTOP
 
 ## Grammar
 ```
