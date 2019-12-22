@@ -47,6 +47,7 @@ class VAR(VALUE):
         self.value = VALUE(0, self.ctype)
 
     def set_value(self, value):
+        assert self.ctype == value.ctype
         self.value = value
         return self.value
 

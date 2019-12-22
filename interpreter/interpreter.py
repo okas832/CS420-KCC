@@ -39,8 +39,16 @@ def define_func(expr):
     assert isinstance(expr, FDEF)
 
 
-def define_var(expr):
+def define_var(expr, genv, lenv, tenv):
     assert isinstance(expr, VDEFID)
+
+    ctype = expr.type
+    for name, assign in expr.pl:
+        if assign is not None:
+            val = exec_expr(assign, genv, lenv)
+        tenv.add_var(name, ctype)
+        if assign is not None:
+            tenv.find_var(name).set_value(val)
 
 
 def exec_cast(expr, genv, lenv):
@@ -197,7 +205,37 @@ def exec_expr(expr, genv, lenv):
     raise ValueError("invalid expression '%s'" % expr)
 
 
-def RUN(ast):
+def exec_stmt(stmt, genv, lenv):
+    if isinstance(stmt, BODY):
+        pass
+    elif isinstance(stmt, EMPTY_STMT):
+        pass
+    elif isinstance(stmt, EXPR_MANY):
+        exec_expr(stmt, genv, lenv)
+    elif isinstance(stmt, WHILE):
+        pass
+    elif isinstance(stmt, FOR):
+        pass
+    elif isinstance(stmt, IFELSE):
+        c = exec_expr(cond, genv, lenv)
+        if c.value:
+            exec_stmt(stmt.if_stmt, genv, lenv)
+        elif stmt.else_stmt is not None:
+            exec_stmt(stmt.else_stmt, genv, lenv)
+    elif isinstance(stmt, CONTINUE):
+        pass
+    elif isinstance(stmt, BREAK):
+        pass
+    elif isinstance(stmt, RETURN):
+        if stmt.expr is not None:
+            return exec_expr(stmt.expr, genv, lenv)
+        return None
+
+
+def test(ast):
     assert isinstance(ast, GOAL)
 
     genv = ENV()
+    lenv = ENV()
+
+    exec_expr(ast, genv, lenv)
