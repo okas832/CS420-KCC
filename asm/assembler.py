@@ -125,6 +125,9 @@ def assemble_addr(code, local_var):
         arr = assemble_addr(code.arrexpr, local_var)
         idx = assemble_expr(code.idxexpr, local_var)
         return arr + idx + [ARRIDX(dst, arr[-1].dst, idx[-1].dst)]
+    elif isinstance(code, DEREF):
+        src = assemble_expr(code.expr, local_var)
+        return src + [REFER(dst, src[-1].dst)]
 
 def assemble_expr(code, local_var):
     global tmp_cnt
@@ -135,6 +138,7 @@ def assemble_expr(code, local_var):
     offset -= 4
     local_var.append(["int", "tmp%d" % (tmp_cnt), offset])
     dst = "tmp%d" % (tmp_cnt)
+    print(code)
     if isinstance(code, IVAL):
         val = re.sub('[lL]', '', code.val)
         if code.val[:2] == "0x":
@@ -227,11 +231,17 @@ def assemble_expr(code, local_var):
     elif isinstance(code, PREOP):
         if code.op == "++":
             src = assemble_expr(code.expr, local_var)
-            pre_code.append(INC(assemble_addr(code.expr, local_var)[-1].dst))
+            src2 = assemble_addr(code.expr, local_var)
+            for code in src2:
+                pre_code.append(code)
+            pre_code.append(INC(src2[-1].dst))
             return src + [MOV(dst, src[-1].dst)]
         elif code.op == "--":
             src = assemble_expr(code.expr, local_var)
-            pre_code.append(DEC(assemble_addr(code.expr, local_var)[-1].dst))
+            src2 = assemble_addr(code.expr, local_var)
+            for code in src2:
+                pre_code.append(code)
+            pre_code.append(DEC(src2[-1].dst))
             return src + [MOV(dst, src[-1].dst)]
         elif code.op == "+":
             src = assemble_expr(code.expr, local_var)
@@ -248,11 +258,17 @@ def assemble_expr(code, local_var):
     elif isinstance(code, POSTOP):
         if code.op == "++":
             src = assemble_expr(code.expr, local_var)
-            post_code.append(INC(assemble_addr(code.expr, local_var)[-1].dst))
+            src2 = assemble_addr(code.expr, local_var)
+            for code in src2:
+                post_code.append(code)
+            post_code.append(INC(src2[-1].dst))
             return src + [MOV(dst, src[-1].dst)]
         elif code.op == "--":
             src = assemble_expr(code.expr, local_var)
-            post_code.append(DEC(assemble_addr(code.expr, local_var)[-1].dst))
+            src2 = assemble_addr(code.expr, local_var)
+            for code in src2:
+                post_code.append(code)
+            post_code.append(DEC(src2[-1].dst))
             return src + [MOV(dst, src[-1].dst)]
     elif isinstance(code, CALL):
         arg_code = []
@@ -262,6 +278,9 @@ def assemble_expr(code, local_var):
             arg_code += assemble_expr(argexpr, local_var)
             push_code += [PUSH(arg_code[-1].dst)]
         return func_code + arg_code + push_code + [CALLINST(dst, func_code[-1].dst, len(code.argexprs) * 4)]
+    elif isinstance(code, DEREF):
+        src = assemble_addr(code.expr, local_var)
+        return src + [REFER(dst, src[-1].dst)]
     return []
 
 def assemble_body(func, glob_var, arg_var, fenv):
