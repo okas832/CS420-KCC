@@ -1,6 +1,6 @@
 import sys
-from logger import logger as Logg
-from interpreter import interpreter as Interp
+# from logger import logger as Logg
+# from interpreter import interpreter as Interp
 
 class Console:
     def __init__(self, filename):
@@ -44,7 +44,7 @@ def main():
         return
     filename = sys.argv[1]
     # 1. load file and initialize console
-    console = Conesole(filename)
+    console = Console(filename)
     # 2. main loop
     while True:
         comm = input("$ ")
