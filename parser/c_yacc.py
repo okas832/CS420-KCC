@@ -25,7 +25,7 @@ def p_def(p):
 # type id [=value] *[,id[=value]];
 def p_defv_1(p):
     """defv : type defv_multi SEMICOL"""
-    p[0] = VDEF(p[1], p[2])
+    p[0] = VDEF(p[1], p[2], p.lineno(1))
 
 
 def p_defv_multi_1(p):
@@ -75,7 +75,7 @@ def p_array_2(p):
 # type id([arg] *[,arg]){*[expr]}
 def p_deff(p):
     """deff : type id_adv LPAREN s_args RPAREN LBRACE body RBRACE"""
-    p[0] = FDEF(p[1], p[2], p[4], p[7])
+    p[0] = FDEF(p[1], p[2], p[4], p[7], p.lineno(1))
 
 
 # for special case(no argument)
@@ -111,7 +111,7 @@ def p_arg(p):
 # body : *[defv] *[stmt]
 def p_body_1(p):
     """body : pre_defv_many pre_stmt_many"""
-    p[0] = BODY(p[1], p[2])
+    p[0] = BODY(p[1], p[2], p.lineno(1))
 
 
 def p_pre_defv_many_1(p):
@@ -173,49 +173,49 @@ def p_stmt_3(p):
 # WHILE
 def p_stmt_4(p):
     """stmt : WHILE LPAREN expr_many RPAREN stmt"""
-    p[0] = WHILE(p[3], p[5])
+    p[0] = WHILE(p[3], p[5], p.lineno(1))
 
 
 # FOR
 def p_stmt_5(p):
     """stmt : FOR LPAREN expr_many SEMICOL expr_many SEMICOL expr_many RPAREN stmt"""
-    p[0] = FOR(p[3], p[5], p[7], p[9])
+    p[0] = FOR(p[3], p[5], p[7], p[9], p.lineno(1))
 
 
 # COND, IF
 def p_stmt_6(p):
     """stmt : IF LPAREN expr_many RPAREN stmt"""
-    p[0] = IFELSE(p[3], p[5], None)
+    p[0] = IFELSE(p[3], p[5], None, p.lineno(1))
 
 
 # COND, IF - ELSE
 def p_stmt_7(p):
     """stmt : IF LPAREN expr_many RPAREN stmt ELSE stmt"""
-    p[0] = IFELSE(p[3], p[5], p[7])
+    p[0] = IFELSE(p[3], p[5], p[7], p.lineno(1))
 
 
 # CONTINUE
 def p_stmt_8(p):
     """stmt : CONTINUE SEMICOL"""
-    p[0] = CONTINUE()
+    p[0] = CONTINUE(p.lineno(1))
 
 
 # BREAK
 def p_stmt_9(p):
     """stmt : BREAK SEMICOL"""
-    p[0] = BREAK()
+    p[0] = BREAK(p.lineno(1))
 
 
 # RETURN VOID
 def p_stmt_10(p):
     """stmt : RETURN SEMICOL"""
-    p[0] = RETURN()
+    p[0] = RETURN(p.lineno(1))
 
 
 # RETURN VALUE
 def p_stmt_11(p):
     """stmt : RETURN expr_many SEMICOL"""
-    p[0] = RETURN(p[2])
+    p[0] = RETURN(p.lineno(1), p[2])
 
 
 # primary expression

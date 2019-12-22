@@ -4,7 +4,7 @@ class AST():
 
 # goal : [def, def, ... , def]
 class GOAL(AST):
-    def __init__(self, defs):   
+    def __init__(self, defs): 
         self.defs = defs
 
     def __add__(self, rhs):
@@ -21,12 +21,13 @@ class GOAL(AST):
 # pl : pair list (name, value)
 #      value is None if not exist
 class VDEF(AST):
-    def __init__(self, type, pl):
+    def __init__(self, type, pl, lineno):
         self.type = type
         self.pl = pl
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'VDEF("%s", %s)' % (self.type, self.pl)
+        return '%d:VDEF("%s", %s)' % (self.lineno, self.type, self.pl)
 
 
 # Function DEFine
@@ -35,14 +36,15 @@ class VDEF(AST):
 # arg : argument (type_name, vdefid) pair
 # body : statements
 class FDEF(AST):
-    def __init__(self, type, name, arg, body):
+    def __init__(self, type, name, arg, body, lineno):
         self.type = type
         self.name = name
         self.arg = arg
         self.body = body
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'FDEF("%s", %s, %s, %s)' % (self.type, self.name, self.arg, self.body)
+        return '%d:FDEF("%s", %s, %s, %s)' % (self.lineno, self.type, self.name, self.arg, self.body)
 
 
 # STateMenT
@@ -68,12 +70,13 @@ class EXPR(AST):
 # defvs: defv*
 # stmts: stmt*
 class BODY(STMT):
-    def __init__(self, defvs, stmts):
+    def __init__(self, defvs, stmts, lineno):
         self.defvs = defvs
         self.stmts = stmts
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'BODY(%s, %s)' % (self.defvs, self.stmts)
+        return '%d:BODY(%s, %s)' % (self.lineno, self.defvs, self.stmts)
 
 
 # EMPTY STateMenT
@@ -107,12 +110,13 @@ class EXPR_MANY(STMT, EXPR):
 # cond: conditional
 # body: body of while loop
 class WHILE(STMT):
-    def __init__(self, cond, body):
+    def __init__(self, cond, body, lineno):
         self.cond = cond
         self.body = body
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'WHILE(%s, %s)' % (self.cond, self.body)
+        return '%d:WHILE(%s, %s)' % (self.lineno, self.cond, self.body, lineno)
 
 
 # FOR loop
@@ -121,14 +125,15 @@ class WHILE(STMT):
 # update: update exopr
 # body: body of for loop
 class FOR(STMT):
-    def __init__(self, init, cond, update, body):
+    def __init__(self, init, cond, update, body, lineno):
         self.init = init
         self.cond = cond
         self.update = update
         self.body = body
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'FOR(%s, %s, %s, %s)' % (self.init, self.cond, self.update, self.body)
+        return '%d:FOR(%s, %s, %s, %s)' % (self.lineno, self.init, self.cond, self.update, self.body)
 
 
 # IF-ELSE statement
@@ -136,41 +141,43 @@ class FOR(STMT):
 # if_stmt: statement taken if true
 # else_stmt: statement taken if false (None if ELSE nonexistent)
 class IFELSE(STMT):
-    def __init__(self, cond, if_stmt, else_stmt):
+    def __init__(self, cond, if_stmt, else_stmt, lineno):
         self.cond = cond
         self.if_stmt = if_stmt
         self.else_stmt = else_stmt
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'IFELSE(%s, %s, %s)' % (self.cond, self.if_stmt, self.else_stmt)
+        return '%d:IFELSE(%s, %s, %s)' % (self.lineno, self.cond, self.if_stmt, self.else_stmt)
 
 
 # CONTINUE statement
 class CONTINUE(STMT):
-    def __init__(self):
-        pass
+    def __init__(self, lineno):
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'CONTINUE()'
+        return '%d:CONTINUE()' % (self.lineno)
 
 
 # BREAK statement
 class BREAK(STMT):
-    def __init__(self):
-        pass
+    def __init__(self, lineno):
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'BREAK()'
+        return '%d:BREAK()' % (self.lineno)
 
 
 # RETURN statement
 # expr: return value (None if return void)
 class RETURN(STMT):
-    def __init__(self, expr=None):
+    def __init__(self, lineno, expr=None):
+        self.lineno = lineno
         self.expr = expr
 
     def __repr__(self):
-        return 'RETURN(%s)' % self.expr
+        return '%d:RETURN(%s)@%d' % (self.lineno, self.expr)
 
 
 # Varible DEFinition ID (id_adv [+ array])
