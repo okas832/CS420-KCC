@@ -189,6 +189,10 @@ def exec_expr(expr, genv, lenv):
         return exec_binop(expr, genv, lenv)
     elif isinstance(expr, ASSIGN):
         return exec_assign(expr, genv, lenv)
+    elif isinstance(expr, EXPR_MANY):
+        for e in expr.exprs:
+            val = exec_expr(val, genv, lenv)
+        return val
 
     raise ValueError("invalid expression '%s'" % expr)
 
