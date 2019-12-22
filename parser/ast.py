@@ -185,122 +185,133 @@ class RETURN(STMT):
 # ptr_cnt : number of '*'s, int
 # array_sz : array size, int >= 0. None for non-array variable
 class VDEFID(AST):
-    def __init__(self, name, ptr_cnt, array_sz):
+    def __init__(self, name, ptr_cnt, array_sz, lineno):
         self.name = name
         self.ptr_cnt = ptr_cnt
         self.array_sz = array_sz
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'VDEFID("%s", %d, %s)' % (self.name, self.ptr_cnt, self.array_sz)
+        return '%d:VDEFID("%s", %d, %s)' % (self.lineno, self.name, self.ptr_cnt, self.array_sz)
 
 
 class ID(EXPR):
-    def __init__(self, name):
+    def __init__(self, name, lineno):
         self.name = name
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'ID("%s")' % self.name
+        return '%d:ID("%s")' % (self.lineno, self.name)
 
 
 class SUBSCR(EXPR):
-    def __init__(self, arrexpr, idxexpr):
+    def __init__(self, arrexpr, idxexpr, lineno):
         self.arrexpr = arrexpr
         self.idxexpr = idxexpr
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'SUBSCR(%s, %s)' % (self.arrexpr, self.idxexpr)
+        return '%d:SUBSCR(%s, %s)' % (self.lineno, self.arrexpr, self.idxexpr)
 
 
 class CALL(EXPR):
-    def __init__(self, funcexpr, argexprs):
+    def __init__(self, funcexpr, argexprs, lineno):
         self.funcexpr = funcexpr
         self.argexprs = argexprs
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'CALL(%s, %s)' % (self.funcexpr, self.argexprs)
+        return '%d:CALL(%s, %s)' % (self.lineno, self.funcexpr, self.argexprs)
 
 
 # Unary postfix operator
 class POSTOP(EXPR):
-    def __init__(self, expr, op):
+    def __init__(self, expr, op, lineno):
         self.expr = expr
         self.op = op
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'POSTOP(%s, "%s")' % (self.expr, self.op)
+        return '%d:POSTOP(%s, "%s")' % (self.lineno, self.expr, self.op)
 
 
 class ADDR(EXPR):
-    def __init__(self, expr):
+    def __init__(self, expr, lineno):
         self.expr = expr
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'ADDR(%s)' % self.expr
+        return '%d:ADDR(%s)' % (self.lineno, self.expr)
 
 
 class DEREF(EXPR):
-    def __init__(self, expr):
+    def __init__(self, expr, lineno):
         self.expr = expr
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'DEREF(%s)' % self.expr
+        return '%d:DEREF(%s)' % (self.lineno, self.expr)
 
 
 # Unary prefix operators
 class PREOP(EXPR):
-    def __init__(self, op, expr):
+    def __init__(self, op, expr, lineno):
         self.op = op
         self.expr = expr
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'PREOP("%s", %s)' % (self.op, self.expr)
+        return '%d:PREOP("%s", %s)' % (self.lineno, self.op, self.expr)
 
 
 class BINOP(EXPR):
-    def __init__(self, lhs, op, rhs):
+    def __init__(self, lhs, op, rhs, lineno):
         self.lhs = lhs
         self.op = op
         self.rhs = rhs
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'BINOP(%s, "%s", %s)' % (self.lhs, self.op, self.rhs)
+        return '%d:BINOP(%s, "%s", %s)' % (self.lineno, self.lhs, self.op, self.rhs)
 
 
 class ASSIGN(EXPR):
-    def __init__(self, lhs, rhs):
+    def __init__(self, lhs, rhs, lineno):
         self.lhs = lhs
         self.rhs = rhs
+        self.lineno = lineno
 
     def __repr__(self):
-        return 'ASSIGN(%s, %s)' % (self.lhs, self.rhs)
+        return '%d:ASSIGN(%s, %s)' % (self.lineno, self.lhs, self.rhs)
 
 
 # CONSTant values
 # val: value, string
 class CONST(EXPR):
-    def __init__(self, val):
+    def __init__(self, val, lineno):
         self.val = val
+        self.lineno = lineno
 
 
 # Integer VALue
 class IVAL(CONST):
     def __repr__(self):
-        return 'IVAL("%s")' % self.val
+        return '%d:IVAL("%s")' % (self.lineno, self.val)
 
 
 # Float VALue
 class FVAL(CONST):
     def __repr__(self):
-        return 'FVAL("%s")' % self.val
+        return '%d:FVAL("%s")' % (self.lineno, self.val)
 
 
 # String VALue
 class SVAL(CONST):
     def __repr__(self):
-        return 'SVAL("%s")' % self.val
+        return '%d:SVAL("%s")' % (self.lineno, self.val)
 
 
 # Char VALue
 class CVAL(CONST):
     def __repr__(self):
-        return 'CVAL("%s")' % self.val
+        return '%d:CVAL("%s")' % (self.lineno, self.val)
