@@ -1,49 +1,38 @@
 from ast import *
 from ctype import *
-
-
-class VALUE():
-    def __init__(self, value, ctype):
-        assert isinstance(ctype, CType)
-        if ctype == TFloat():
-            self.value = float(value)
-        elif ctype == TInt():
-            value = int(value) & 0xFFFFFFFF
-            self.value = value if value < 0x80000000 else value - 0x100000000
-        elif ctype == TChar():
-            value = int(result) & 0xFF
-            self.value = value if value < 0x80 else value - 0x100
-        else:
-            raise ValueError("Not Implemented Type '%s'" % ctype)
-        self.ctype = ctype
-
-    def __repr__(self):
-        if self.ctype == TVoid():
-            return "(void)"
-        return "(%s) %d" % (self.ctype, self.value)
-
-
-class VPTR(VALUE):
-    def __init__(self, deref_value):
-        self.deref_value = deref_value
-
-    def deref(self):
-        return self.deref_value
-
-    def __repr__(self):
-        return "&%s" % self.value
+from environ import *
 
 
 def id_resolve(expr, genv, lenv):
     assert isinstance(expr, ID)
 
-    if expr.name in lenv:
-        return lenv[expr.name]
+    if lenv.exist_var(expr.name):
+        return lenv.find_var(expr.name)
 
-    if expr.name in genv:
-        return genv[expr.name]
+    if genv.exist_var(expr.name):
+        return genv.find_var(expr.name)
 
     raise SyntaxError("'%s' undeclared (first use in this function)" % expr.name)
+
+
+def lvalue_resolve(expr, genv, lenv):
+    assert isinstance(expr, ID) or isinstance(expr, DEREF) or (isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID))
+    # TODO: int a[10]; int **b = &a; (*b)[0] = 1;
+
+    if isinstance(expr, DEREF):
+        val = exec_expr(expr.expr)
+        if isinstance(val, VPTR):
+            return val.deref()
+        else:
+            raise TypeError("invalid type argument of unary '*' (have '%s')" % val.ctype)
+    if isinstance(expr, ID):
+        return id_resolve(expr, genv, lenv)
+    if isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID):
+        idx = exec_expr(expr.idxexpr, genv, lenv)
+        if idx.ctype == TInt():
+            var = id_resolve(expr.arrexpr, genv, lenv)
+            return var[idx]
+        raise TypeError("array subscript is not an integer")
 
 
 def define_func(expr):
@@ -73,11 +62,32 @@ def exec_cast(expr, genv, lenv):
     raise ValueError("Not Implemented Type Casting: %s" % result.expr)
 
 
+def exec_preop(expr, genv, lenv):
+    assert isinstance(expr, PREOP)
+
+    val = exec_expr(expr.expr, genv, lenv)
+
+    # TODO: INC and DEC operator
+    if expr.op == "++":
+        pass
+    elif expr.op == "--":
+        pass
+    elif expr.op == "+":
+        result = +val.value
+    elif expr.op == "-":
+        result = -val.value
+    elif expr.op == "~":
+        result = ~val.value
+    elif expr.op == "!":
+        result = not val.value
+    return VALUE(result, val.ctype)
+
+
 def exec_binop(expr, genv, lenv):
     assert isinstance(expr, BINOP)
 
-    lhs = exec_expr(expr.lhs)
-    rhs = exec_expr(expr.rhs)
+    lhs = exec_expr(expr.lhs, genv, lenv)
+    rhs = exec_expr(expr.rhs, genv, lenv)
     assert lhs.ctype == rhs.ctype
     ctype = lhs.ctype
 
@@ -127,27 +137,12 @@ def exec_binop(expr, genv, lenv):
     return VALUE(result, ctype)
 
 
-def isnotinstance(a, b):
-    return not isinstance(a, b)
-
-
 def exec_assign(expr, genv, lenv):
     assert isinstance(expr, ASSIGN)
 
-    rhs = exec_expr(expr.rhs)
-    if isinstance(expr.lhs, DEREF):
-        exec_expr(expr.lhs.expr)
-    if isinstance(expr.lhs, ID):
-        if expr.lhs.name in lenv:
-            lenv[expr.lhs.name] = rhs
-        elif expr.lhs.name in genv:
-            genv[expr.lhs.name] = rhs
-    if isinstance(expr.lhs, SUBSCR) and isinstance(expr.lhs.arrexpr, ID):
-        idx = exec_expr(expr.lhs.idxexpr)
-        if expr.lhs.arrexpr.name in lenv:
-            lenv[expr.lhs.arrexpr.name][idx] = rhs
-        elif expr.lhs.arrexpr.name in genv:
-            genv[expr.lhs.arrexpr.name][idx] = rhs
+    rhs = exec_expr(expr.rhs, genv, lenv)
+    lhs = lvalue_resolve(expr.lhs, genv, lenv)
+    return lhs.set_value(rhs)
 
 
 def exec_expr(expr, genv, lenv):
@@ -159,21 +154,37 @@ def exec_expr(expr, genv, lenv):
         pass
     elif isinstance(expr, CVAL):
         return VALUE(expr.val, TChar())
-    elif isinstance(expr, ID):
-        return id_resolve(expr, genv, lenv)
     elif isinstance(expr, TEXPR):
         return exec_cast(expr, genv, lenv)
-    elif isinstance(expr, ADDR):
-        return VPTR(exec_expr(expr, genv, lenv))
-    elif isinstance(expr, DEREF):
-        val = exec_expr(expr.expr, genv, lenv)
-        if not isinstance(val, VPTR):
-            raise ValueError("invalid type argument of unary '*' (have '%s')" % val.ctype)
-        return val.deref()
-    elif isinstance(expr, PREOP):
+    elif isinstance(expr, ID):
+        var = id_resolve(expr, genv, lenv)
+        if isinstance(var, VAR):
+            return var.get_value()
+        else:
+            assert isinstance(var, list)
+            return var
+    elif isinstance(expr, SUBSCR):
+        arr = exec_expr(expr.arrexpr, genv, lenv)
+        idx = exec_expr(expr.idxexpr, genv, lenv)
+        assert isinstance(arr, list)
+        return arr[idx].get_value()
+    elif isinstance(expr, CALL):
         pass
     elif isinstance(expr, POSTOP):
+        # TODO: should handle ++, --
         pass
+    elif isinstance(expr, ADDR):
+        return VPTR(lvalue_resolve(expr, genv, lenv))
+    elif isinstance(expr, DEREF):
+        val = exec_expr(expr.expr, genv, lenv)
+        if isinstance(val, VPTR):
+            return val.deref().get_value()
+        elif isinstance(val, list):
+            return val[0].get_value()
+        else:
+            raise ValueError("Cannot dereference '%s'" % val)
+    elif isinstance(expr, PREOP):
+        return exec_preop(expr, genv, lenv)
     elif isinstance(expr, BINOP):
         return exec_binop(expr, genv, lenv)
     elif isinstance(expr, ASSIGN):
@@ -185,6 +196,4 @@ def exec_expr(expr, genv, lenv):
 def RUN(ast):
     assert isinstance(ast, GOAL)
 
-    genv = {}
-
-    # for define in ast.defs:
+    genv = ENV()
