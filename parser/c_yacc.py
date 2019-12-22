@@ -74,7 +74,7 @@ def p_array_2(p):
 
 # type id([arg] *[,arg]){*[expr]}
 def p_deff(p):
-    """deff : type ID LPAREN s_args RPAREN LBRACE body RBRACE"""
+    """deff : type id_adv LPAREN s_args RPAREN LBRACE body RBRACE"""
     p[0] = FDEF(p[1], p[2], p[4], p[7])
 
 
@@ -192,6 +192,30 @@ def p_stmt_6(p):
 def p_stmt_7(p):
     """stmt : IF LPAREN expr_many RPAREN stmt ELSE stmt"""
     p[0] = IFELSE(p[3], p[5], p[7])
+
+
+# CONTINUE
+def p_stmt_8(p):
+    """stmt : CONTINUE SEMICOL"""
+    p[0] = CONTINUE()
+
+
+# BREAK
+def p_stmt_9(p):
+    """stmt : BREAK SEMICOL"""
+    p[0] = BREAK()
+
+
+# RETURN VOID
+def p_stmt_10(p):
+    """stmt : RETURN SEMICOL"""
+    p[0] = RETURN()
+
+
+# RETURN VALUE
+def p_stmt_11(p):
+    """stmt : RETURN expr_many SEMICOL"""
+    p[0] = RETURN(p[2])
 
 
 # primary expression
