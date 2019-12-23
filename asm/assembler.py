@@ -127,7 +127,10 @@ def assemble_addr(code, local_var):
         return arr + idx + [ARRIDX(dst, arr[-1].dst, idx[-1].dst)]
     elif isinstance(code, DEREF):
         src = assemble_expr(code.expr, local_var)
-        return src + [REFER(dst, src[-1].dst)]
+        return src + [DEREFER(dst, src[-1].dst)]
+    elif isinstance(code, CALL):
+        src = assemble_expr(code, local_var)
+        return src
 
 def assemble_expr(code, local_var):
     global tmp_cnt
@@ -138,7 +141,6 @@ def assemble_expr(code, local_var):
     offset -= 4
     local_var.append(["int", "tmp%d" % (tmp_cnt), offset])
     dst = "tmp%d" % (tmp_cnt)
-    print(code)
     if isinstance(code, IVAL):
         val = re.sub('[lL]', '', code.val)
         if code.val[:2] == "0x":
@@ -160,54 +162,41 @@ def assemble_expr(code, local_var):
         return [STR(dst, code.val)]
 
     elif isinstance(code, BINOP):
+        lhs = assemble_expr(code.lhs, local_var)
+        rhs = assemble_expr(code.rhs, local_var)
         if code.op == "+":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [ADD(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "-":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [SUB(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "*":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [MUL(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "/":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [DIV(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "%":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [MOD(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "&":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [AND(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "|":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [OR(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "^":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [XOR(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "<<":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [LSH(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == ">>":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [RSH(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "&&":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [DAND(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == "||":
-            lhs = assemble_expr(code.lhs, local_var)
-            rhs = assemble_expr(code.rhs, local_var)
             return lhs + rhs + [DOR(dst, lhs[-1].dst, rhs[-1].dst)]
+        elif code.op == "<":
+            return lhs + rhs + [LC(dst, lhs[-1].dst, rhs[-1].dst)]
+        elif code.op == ">":
+            return lhs + rhs + [GC(dst, lhs[-1].dst, rhs[-1].dst)]
+        elif code.op == "<=":
+            return lhs + rhs + [LEC(dst, lhs[-1].dst, rhs[-1].dst)]
+        elif code.op == ">=":
+            return lhs + rhs + [GEC(dst, lhs[-1].dst, rhs[-1].dst)]
+
     elif isinstance(code, ID):
         return [MOV(dst, code.name)]
     elif isinstance(code, I2C):
@@ -279,8 +268,31 @@ def assemble_expr(code, local_var):
             push_code += [PUSH(arg_code[-1].dst)]
         return func_code + arg_code + push_code + [CALLINST(dst, func_code[-1].dst, len(code.argexprs) * 4)]
     elif isinstance(code, DEREF):
+        src = assemble_expr(code.expr, local_var)
+        return src + [DEREFER(dst, src[-1].dst)]
+    elif isinstance(code, ADDR):
         src = assemble_addr(code.expr, local_var)
-        return src + [REFER(dst, src[-1].dst)]
+        return src
+    elif isinstance(code, A2P):
+        src = assemble_addr(code.expr, local_var)
+        return src
+    elif isinstance(code, FOR):
+        init_code = assemble_expr(code.init, local_var)
+        cond_code = assemble_expr(code.cond, local_var)
+        post_code = assemble_expr(code.update, local_var)
+        body_code = assemble_expr(code.body, local_var)
+        return [FORF(init_code, cond_code, post_code, body_code)]
+    elif isinstance(code, IFELSE):
+        cond_code = assemble_expr(code.cond, local_var)
+        if_stmt_code = assemble_expr(code.if_stmt, local_var)
+        else_stmt_code = assemble_expr(code.else_stmt, local_var)
+        return [IFELSEF(cond_code, if_stmt_code, else_stmt_code)]
+    elif isinstance(code, EXPR_MANY):
+        expr_code = []
+        for expr in code.exprs:
+            res_code = assemble_expr(expr, local_var)
+            expr_code += res_code
+        return expr_code
     return []
 
 def assemble_body(func, glob_var, arg_var, fenv):
