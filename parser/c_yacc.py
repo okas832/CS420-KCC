@@ -4,6 +4,10 @@ from ast import *
 
 tokens = c_lex.tokens
 
+precedence = (
+    ('left', 'PREC_IF'),
+    ('left', 'ELSE'),
+)
 
 #  goal : def def ... def
 def p_goal_1(p):
@@ -184,7 +188,7 @@ def p_stmt_5(p):
 
 # COND, IF
 def p_stmt_6(p):
-    """stmt : IF LPAREN expr_many RPAREN stmt"""
+    """stmt : IF LPAREN expr_many RPAREN stmt %prec PREC_IF"""
     p[0] = IFELSE(p[3], p[5], None)
 
 
