@@ -4,7 +4,7 @@
 - [x] Define nodes for AST
 - [x] Implement yacc for function body
 - [ ] Add line number to every AST nodes
-- [ ] Fix if-then vs. if-then-else shift/reduce conflict (PLY currently resolves to shift, which is correct)
+- [x] Fix if-then vs. if-then-else shift/reduce conflict (PLY currently resolves to shift, which is correct)
 - [x] Implement implicit type conversion
 - [x] Implement simple type checks
 - [ ] Check if conditionals expression must be casted to TInt

@@ -85,6 +85,12 @@ def type_resolve(expr, env, is_const=False):
         expr.type = TPtr(TChar())
     elif isinstance(expr, CVAL):
         expr.type = TChar()
+    elif isinstance(expr, EXPR_MANY):
+        for exp in expr.exprs:
+            type_resolve(exp, env)
+        expr.type = expr.exprs[-1].type
+    else:
+        raise AssertionError("Unexpected expr type encountered in type_resolve()")
 
     return expr.type
 
@@ -112,33 +118,44 @@ def VDEF_resolve(vdef, env, target_env, is_const=False):
         target_env[vdefid.name] = var_type
 
 
-def STMT_resolve(stmt, env):
+def STMT_resolve(stmt, env, ret_type, inside_loop=False):
     if isinstance(stmt, BODY):
-        body_resolve(stmt, env)
+        body_resolve(stmt, env, ret_type)
     elif isinstance(stmt, EMPTY_STMT):
         pass
-    elif isinstance(stmt, EXPR_MANY):
-        for expr in stmt.exprs:
-            type_resolve(expr, env)
-        stmt.type = stmt.exprs[-1].type
     elif isinstance(stmt, WHILE):
-        STMT_resolve(stmt.cond, env)  ## TODO: cast conditionals to int?
-        STMT_resolve(stmt.body, env)
+        type_resolve(stmt.cond, env)
+        STMT_resolve(stmt.body, env, ret_type, True)
     elif isinstance(stmt, FOR):
-        STMT_resolve(stmt.init, env)
-        STMT_resolve(stmt.cond, env)
-        STMT_resolve(stmt.update, env)
-        STMT_resolve(stmt.body, env)
+        type_resolve(stmt.init, env)
+        type_resolve(stmt.cond, env)
+        type_resolve(stmt.update, env)
+        STMT_resolve(stmt.body, env, ret_type, True)
     elif isinstance(stmt, IFELSE):
-        STMT_resolve(stmt.cond, env)
-        STMT_resolve(stmt.if_stmt, env)
+        type_resolve(stmt.cond, env)
+        STMT_resolve(stmt.if_stmt, env, ret_type, inside_loop)
         if stmt.else_stmt is not None:
-            STMT_resolve(stmt.else_stmt, env)
-    else:
+            STMT_resolve(stmt.else_stmt, env, ret_type, inside_loop)
+    elif isinstance(stmt, CONTINUE):
+        if not inside_loop:
+            raise SyntaxError("continue statement not within loop")
+    elif isinstance(stmt, BREAK):
+        if not inside_loop:
+            raise SyntaxError("break statement not within loop")
+    elif isinstance(stmt, RETURN):
+        if stmt.expr is None:
+            if ret_type != TVoid():
+                raise SyntaxError("'return' with no value, in function returning non-void")
+        else:
+            if ret_type == TVoid():
+                raise SyntaxError("'return' with a value, in function returning void")
+            type_resolve(stmt.expr, env)
+            stmt.expr = cast(stmt.expr, ret_type)
+    else:  # EXPR_MANY & other EXPRs
         type_resolve(stmt, env)
 
 
-def body_resolve(body, env, func_body=False):
+def body_resolve(body, env, ret_type, func_body=False):
     if not func_body:
         env.append({})  # scope of current body
 
@@ -148,7 +165,7 @@ def body_resolve(body, env, func_body=False):
 
     # resolve STMTs
     for stmt in body.stmts:
-        STMT_resolve(stmt, env)
+        STMT_resolve(stmt, env, ret_type)
 
     del env[-1]
 
@@ -183,7 +200,7 @@ def AST_TYPE(ast):
                 raise SyntaxError("redefinition of '%s'" % define.name.name)
             genv[define.name.name] = TFunc(ret_type, arg_types)
 
-            body_resolve(define.body, [genv, args_env], True)
+            body_resolve(define.body, [genv, args_env], ret_type, True)
 
     return ast
 
