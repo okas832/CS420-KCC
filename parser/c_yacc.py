@@ -25,7 +25,7 @@ def p_def(p):
 # type id [=value] *[,id[=value]];
 def p_defv_1(p):
     """defv : type defv_multi SEMICOL"""
-    p[0] = VDEF(p[1], p[2])
+    p[0] = VDEF(p[1], p[2], p.lineno(1))
 
 
 def p_defv_multi_1(p):
@@ -52,7 +52,7 @@ def p_defv_multi_4(p):
 
 def p_id_adv_1(p):
     """id_adv : ID"""
-    p[0] = VDEFID(p[1], 0, None)
+    p[0] = VDEFID(p[1], 0, None, p.lineno(1))
 
 
 def p_id_adv_2(p):
@@ -75,7 +75,7 @@ def p_array_2(p):
 # type id([arg] *[,arg]){*[expr]}
 def p_deff(p):
     """deff : type id_adv LPAREN s_args RPAREN LBRACE body RBRACE"""
-    p[0] = FDEF(p[1], p[2], p[4], p[7])
+    p[0] = FDEF(p[1], p[2], p[4], p[7], p.lineno(1))
 
 
 # for special case(no argument)
@@ -111,7 +111,7 @@ def p_arg(p):
 # body : *[defv] *[stmt]
 def p_body_1(p):
     """body : pre_defv_many pre_stmt_many"""
-    p[0] = BODY(p[1], p[2])
+    p[0] = BODY(p[1], p[2], p.lineno(1))
 
 
 def p_pre_defv_many_1(p):
@@ -173,55 +173,55 @@ def p_stmt_3(p):
 # WHILE
 def p_stmt_4(p):
     """stmt : WHILE LPAREN expr_many RPAREN stmt"""
-    p[0] = WHILE(p[3], p[5])
+    p[0] = WHILE(p[3], p[5], p.lineno(1))
 
 
 # FOR
 def p_stmt_5(p):
     """stmt : FOR LPAREN expr_many SEMICOL expr_many SEMICOL expr_many RPAREN stmt"""
-    p[0] = FOR(p[3], p[5], p[7], p[9])
+    p[0] = FOR(p[3], p[5], p[7], p[9], p.lineno(1))
 
 
 # COND, IF
 def p_stmt_6(p):
     """stmt : IF LPAREN expr_many RPAREN stmt"""
-    p[0] = IFELSE(p[3], p[5], None)
+    p[0] = IFELSE(p[3], p[5], None, p.lineno(1))
 
 
 # COND, IF - ELSE
 def p_stmt_7(p):
     """stmt : IF LPAREN expr_many RPAREN stmt ELSE stmt"""
-    p[0] = IFELSE(p[3], p[5], p[7])
+    p[0] = IFELSE(p[3], p[5], p[7], p.lineno(1))
 
 
 # CONTINUE
 def p_stmt_8(p):
     """stmt : CONTINUE SEMICOL"""
-    p[0] = CONTINUE()
+    p[0] = CONTINUE(p.lineno(1))
 
 
 # BREAK
 def p_stmt_9(p):
     """stmt : BREAK SEMICOL"""
-    p[0] = BREAK()
+    p[0] = BREAK(p.lineno(1))
 
 
 # RETURN VOID
 def p_stmt_10(p):
     """stmt : RETURN SEMICOL"""
-    p[0] = RETURN()
+    p[0] = RETURN(p.lineno(1))
 
 
 # RETURN VALUE
 def p_stmt_11(p):
     """stmt : RETURN expr_many SEMICOL"""
-    p[0] = RETURN(p[2])
+    p[0] = RETURN(p.lineno(1), p[2])
 
 
 # primary expression
 def p_priexpr_1(p):
     """priexpr : ID"""
-    p[0] = ID(p[1])
+    p[0] = ID(p[1], p.lineno(1))
 
 
 def p_priexpr_2(p):
@@ -243,25 +243,25 @@ def p_postexpr_1(p):
 # array indexing
 def p_postexpr_2(p):
     """postexpr : postexpr LBRACK expr_many RBRACK"""
-    p[0] = SUBSCR(p[1], p[3])
+    p[0] = SUBSCR(p[1], p[3], p.lineno(1))
 
 
 # function call with void parameter
 def p_postexpr_3(p):
     """postexpr : postexpr LPAREN RPAREN"""
-    p[0] = CALL(p[1], [])
+    p[0] = CALL(p[1], [], p.lineno(1))
 
 
 # function call with parameters
 def p_postexpr_4(p):
     """postexpr : postexpr LPAREN argexpr_list RPAREN"""
-    p[0] = CALL(p[1], p[3])
+    p[0] = CALL(p[1], p[3], p.lineno(1))
 
 
 def p_postexpr_5(p):
     """postexpr : postexpr INC
                 | postexpr DEC"""
-    p[0] = POSTOP(p[1], p[2])
+    p[0] = POSTOP(p[1], p[2], p.lineno(1))
 
 
 def p_argexpr_list_1(p):
@@ -282,12 +282,12 @@ def p_unaryexpr_1(p):
 
 def p_unaryexpr_2(p):
     """unaryexpr : AND unaryexpr"""
-    p[0] = ADDR(p[2])
+    p[0] = ADDR(p[2], p.lineno(1))
 
 
 def p_unaryexpr_3(p):
     """unaryexpr : TIMES unaryexpr"""
-    p[0] = DEREF(p[2])
+    p[0] = DEREF(p[2], p.lineno(1))
 
 
 def p_unaryexpr_4(p):
@@ -297,7 +297,7 @@ def p_unaryexpr_4(p):
                  | MINUS unaryexpr
                  | NOT unaryexpr
                  | LNOT unaryexpr"""
-    p[0] = PREOP(p[1], p[2])
+    p[0] = PREOP(p[1], p[2], p.lineno(1))
 
 
 # multiplicative_expression
@@ -310,7 +310,7 @@ def p_multexpr_2(p):
     """multexpr : multexpr TIMES unaryexpr
                 | multexpr DIVIDE unaryexpr
                 | multexpr MOD unaryexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # additive_expression
@@ -322,7 +322,7 @@ def p_addexpr_1(p):
 def p_addexpr_2(p):
     """addexpr : addexpr PLUS multexpr
                | addexpr MINUS multexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # shift_expression
@@ -334,7 +334,7 @@ def p_shiftexpr_1(p):
 def p_shiftexpr_2(p):
     """shiftexpr : shiftexpr LSHIFT addexpr
                  | shiftexpr RSHIFT addexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # relational_expression
@@ -348,7 +348,7 @@ def p_relexpr_2(p):
                | relexpr GE shiftexpr
                | relexpr LEQ shiftexpr
                | relexpr GEQ shiftexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # equality_expression
@@ -360,7 +360,7 @@ def p_eqexpr_1(p):
 def p_eqexpr_2(p):
     """eqexpr : eqexpr EQ relexpr
               | eqexpr NE relexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # and_expression
@@ -371,7 +371,7 @@ def p_andexpr_1(p):
 
 def p_andexpr_2(p):
     """andexpr : andexpr AND eqexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # exclusive_or_expression
@@ -382,7 +382,7 @@ def p_xorexpr_1(p):
 
 def p_xorexpr_2(p):
     """xorexpr : xorexpr XOR andexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # inclusive_or_expression
@@ -393,7 +393,7 @@ def p_orexpr_1(p):
 
 def p_orexpr_2(p):
     """orexpr : orexpr OR xorexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # logical_and_expression
@@ -404,7 +404,7 @@ def p_landexpr_1(p):
 
 def p_landexpr_2(p):
     """landexpr : landexpr LAND orexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # logical_or_expression
@@ -415,7 +415,7 @@ def p_lorexpr_1(p):
 
 def p_lorexpr_2(p):
     """lorexpr : lorexpr LOR landexpr"""
-    p[0] = BINOP(p[1], p[2], p[3])
+    p[0] = BINOP(p[1], p[2], p[3], p.lineno(2))
 
 
 # expression
@@ -431,17 +431,17 @@ def p_expr_2(p):
     if not (isinstance(p[1], ID) or (isinstance(p[1], SUBSCR) and isinstance(p[1].arrexpr, ID))):
         raise SyntaxError("lvalue required as left operand of assignment")
     if p[2] == "":
-        p[0] = ASSIGN(p[1], p[3])
+        p[0] = ASSIGN(p[1], p[3], p.lineno(2))
     else:
-        p[0] = ASSIGN(p[1], BINOP(p[1], p[2], p[3]))
+        p[0] = ASSIGN(p[1], BINOP(p[1], p[2], p[3], p.lineno(2)), p.lineno(2))
 
 
 def p_expr_3(p):
     """expr : TIMES unaryexpr assign_op expr"""
     if p[3] == "":
-        p[0] = ASSIGN(DEREF(p[2]), p[4])
+        p[0] = ASSIGN(DEREF(p[2], p.lineno(2)), p[4], p.lineno(3))
     else:
-        p[0] = ASSIGN(DEREF(p[2]), BINOP(DEREF(p[2]), p[3], p[4]))
+        p[0] = ASSIGN(DEREF(p[2], p.lineno(2)), BINOP(DEREF(p[2], p.lineno(2)), p[3], p[4], p.lineno(3)), p.lineno(3))
 
 
 # assignment_operator
@@ -485,22 +485,22 @@ def p_type(p):
 
 def p_const_1(p):
     """const : IVAL"""
-    p[0] = IVAL(p[1])
+    p[0] = IVAL(p[1], p.lineno(1))
 
 
 def p_const_2(p):
     """const : FVAL"""
-    p[0] = FVAL(p[1])
+    p[0] = FVAL(p[1], p.lineno(1))
 
 
 def p_const_3(p):
     """const : SVAL"""
-    p[0] = SVAL(p[1])
+    p[0] = SVAL(p[1], p.lineno(1))
 
 
 def p_const_4(p):
     """const : CVAL"""
-    p[0] = CVAL(p[1])
+    p[0] = CVAL(p[1], p.lineno(1))
 
 
 def p_empty(p):
