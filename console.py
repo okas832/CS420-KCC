@@ -1,11 +1,12 @@
 import sys
-# from logger import logger as Logg
-# from interpreter import interpreter as Interp
+from logger import logger as Logg
+from interpreter import interpreter as Interp
+import parser
 
 class Console:
     def __init__(self, filename):
         self.filename = filename
-    
+
     def next(self):
         ## todo : execute with interpreter and update with logger
         pass

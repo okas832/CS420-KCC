@@ -1,6 +1,4 @@
-from ast import *
-from ctype import *
-
+from parser import *
 
 class VALUE():
     def __init__(self, value, ctype):
