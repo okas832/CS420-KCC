@@ -6,5 +6,8 @@
 - [x] Translate AST to pre-ASM
 - [ ] Transform pre-ASM to nasm style assembly language
 
+## Link & Make Binary
+`nasm -f elf32 main.nasm && ld -melf_i386 -dynamic-linker /lib/ld-linux.so.2 -o main main.o -lc`
+
 ## Etc
 - Need to add some in assemble-addr
