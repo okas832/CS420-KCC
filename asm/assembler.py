@@ -102,10 +102,6 @@ def emit_data_section(glob_var):
 
     return res
 
-def emit_text_section(func):
-    return ""
-
-
 tmp_cnt = 0
 offset = 0
 
@@ -139,7 +135,7 @@ def assemble_expr(code, local_var):
     global post_code
     tmp_cnt += 1
     offset -= 4
-    local_var.append(["int", "tmp%d" % (tmp_cnt), offset])
+    local_var.append([4, "tmp%d" % (tmp_cnt), offset])
     dst = "tmp%d" % (tmp_cnt)
     if isinstance(code, IVAL):
         val = re.sub('[lL]', '', code.val)
@@ -266,6 +262,7 @@ def assemble_expr(code, local_var):
         for argexpr in code.argexprs:
             arg_code += assemble_expr(argexpr, local_var)
             push_code += [PUSH(arg_code[-1].dst)]
+        push_code = push_code[::-1]
         return func_code + arg_code + push_code + [CALLINST(dst, func_code[-1].dst, len(code.argexprs) * 4)]
     elif isinstance(code, DEREF):
         src = assemble_expr(code.expr, local_var)
@@ -293,9 +290,12 @@ def assemble_expr(code, local_var):
             res_code = assemble_expr(expr, local_var)
             expr_code += res_code
         return expr_code
+    elif isinstance(code, RETURN):
+        ret_code = assemble_expr(code.expr, local_var)
+        return ret_code + [RET(ret_code[-1].dst)]
     return []
 
-def assemble_body(func, glob_var, arg_var, fenv):
+def assemble_body(func,  arg_var):
     global offset
     global pre_code
     global post_code
@@ -303,20 +303,23 @@ def assemble_body(func, glob_var, arg_var, fenv):
     code = []
     for defv in func.body.defvs:
         size = 4
+        ts = 4
         for var, val in defv.pl:
             # char is 1 byte
             if defv.type == "char":
                 size = 1
+                ts = 1
             # pointer size always 4
             if var.ptr_cnt != 0:
                 size = 4
+                ts = 4
             # if array, multiply
             if var.array_sz:
                 size *= var.array_sz
 
             # alloc space
             offset -= size
-            local_var.append([defv.type, var.name, offset])
+            local_var.append([ts, var.name, offset])
             # align
             offset -= offset % 4
             if val:
@@ -329,8 +332,7 @@ def assemble_body(func, glob_var, arg_var, fenv):
         code += pre_code + expr_code + post_code
         pre_code = []
         post_code = []
-    print(code)
-    return
+    return code, local_var
 
 def assign_arg_addr(arg):
     arg_lst = []
@@ -344,12 +346,296 @@ def assemble_func(func, glob_var, fenv):
     func_type = func.type
     func_label = func.name
     func_arg = assign_arg_addr(func.arg)
-    func_body = assemble_body(func, glob_var, func_arg, fenv)
-    return
+    func_body, local_var = assemble_body(func, func_arg)
+    return [func_type, func_label, func_arg, func_body, local_var]
+
+
+STR_DATA = []
+def id2addr(id, glob_var, func_arg, local_var):
+    global STR_DATA
+    if isinstance(id, int):
+        return str(id)
+    if isinstance(id, ID):
+        id = id.name
+    for var in local_var:
+        if var[1] == id:
+            return "[ebp%+d]"%(var[2])
+    for var in func_arg:
+        if var[1].name == id:
+            return "[ebp%+d]"%(var[2])
+    for typ in ["int", "float", "char"]:
+        for var in glob_var.get(typ, []):
+            if var[0].name == id:
+                return "__" + str(id)
+    if id[0] == '"' and id[-1] == '"':
+        STR_DATA.append(("str_label%d"%(len(STR_DATA)+1), id))
+        return "str_label%d"%(len(STR_DATA))
+    return "[%s]"%(id)
+
+def emit_text_section(func, glob_var):
+    res = "section .text\n"
+    for f in func:
+        last = False
+        func_type, func_label, func_arg, func_body, local_var = f
+        res += func_label.name + ":\n"
+        res += "\tpush ebp\n"
+        res += "\tmov ebp, esp;\n"
+        if len(local_var) != 0:
+            res += "\tsub esp, %d\n"%(-local_var[-1][2])
+        for instr in func_body:
+            last = False
+            if isinstance(instr, MOV):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, ADD):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tadd eax, edx\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, SUB):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tsub eax, edx\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, MUL):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\timul eax, edx\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, DIV):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+            elif isinstance(instr, MOD):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+            elif isinstance(instr, AND):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tand eax, edx\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, OR):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tor eax, edx\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, XOR):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\txor eax, edx\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, LSH):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov ecx, %s\n"%(src2_addr)
+                res += "\tshl eax, cl\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, RSH):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov ecx, %s\n"%(src2_addr)
+                res += "\tshr eax, cl\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, RSH):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov ecx, %s\n"%(src2_addr)
+                res += "\tshr eax, cl\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, DAND):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tcmp eax, 0\n"
+                res += "\tsetne al\n"
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tcmp edx, 0\n"
+                res += "\tsetne dl\n"
+                res += "\tand al, dl\n"
+                res += "\tmovzx eax, al\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, DOR):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tcmp eax, 0\n"
+                res += "\tsetne al\n"
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tcmp edx, 0\n"
+                res += "\tsetne dl\n"
+                res += "\tor al, dl\n"
+                res += "\tmovzx eax, al\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, LC):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tcmp eax, edx\n"
+                res += "\tsetl al\n"
+                res += "\tmovzx eax, al\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, GC):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tcmp eax, edx\n"
+                res += "\tsetg al\n"
+                res += "\tmovzx eax, al\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, LEC):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tcmp eax, edx\n"
+                res += "\tsetle al\n"
+                res += "\tmovzx eax, al\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, GEC):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tcmp eax, edx\n"
+                res += "\tsetge al\n"
+                res += "\tmovzx eax, al\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, MOVB):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tmovzx %s, al\n"%(dst_addr)
+            elif isinstance(instr, MOVE):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, 0\n"
+                res += "\tmov al, %s\n"%(src_addr)
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, SAVE):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov edx, %s\n"%(src_addr)
+                res += "\tmov eax, %s\n"%(dst_addr)
+                res += "\tmov [eax], edx\n"
+            elif isinstance(instr, IDADDR):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tlea eax, %s\n"%(src_addr)
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, ARRIDX):
+                src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov edx, %s\n"%(src2_addr)
+                res += "\tlea eax, [edx * 4 + eax]\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, DEREFER):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tlea eax, %s\n"%(src_addr)
+                res += "\tmov eax, [eax]\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, INC):
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tlea eax, %s\n"%(dst_addr)
+                res += "\tmov edx, %s\n"%(dst_addr)
+                res += "\tinc edx\n"
+                res += "\tmov [eax], edx\n"
+            elif isinstance(instr, DEC):
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tlea eax, %s\n"%(dst_addr)
+                res += "\tmov edx, %s\n"%(dst_addr)
+                res += "\tdec edx\n"
+                res += "\tmov [eax], edx\n"
+            elif isinstance(instr, NEG):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tneg eax\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, NOT):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tnot eax\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, LNOT):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tcmp eax, 0\n"
+                res += "\tsete al\n"
+                res += "\tmovzx eax, al\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, PUSH):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tpush eax\n"
+            elif isinstance(instr, STR):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tmov %s, eax\n"%(dst_addr)
+            elif isinstance(instr, CALLINST):
+                dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                func_addr = id2addr(instr.func, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(func_addr)
+                res += "\tcall eax\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
+                if instr.pop != 0:
+                    res += "\tadd esp, %d\n"%(instr.pop)
+            elif isinstance(instr, RET):
+                last = True
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tleave\n"
+                res += "\tret\n"
+        if last == False:
+            res += "\tmov eax, 0\n"
+            res += "\tleave\n"
+            res += "\tret\n"
+    return res
+
 
 def hdlr_goal(ast):
     assert isinstance(ast, GOAL)
-
+    global STR_DATA
     glob_var = {}
     func = []
     for d in ast.defs:
@@ -363,9 +649,18 @@ def hdlr_goal(ast):
             func.append(assemble_func(d, glob_var, func))
         else:
             raise TypeError("Cannot handle %s" % (d))
+    prefix = "global _start\nextern printf\nextern exit\n"
+    text_section = emit_text_section(func, glob_var)
     data_section = emit_data_section(glob_var)
-    text_section = emit_text_section(func)
-    return data_section + text_section
+    postfix = """_start:
+\tpush ebp
+\tmov ebp, esp
+\tcall main
+\tpush eax
+\tcall exit"""
+    for label, data in STR_DATA:
+        data_section += "\t%s: db %s, 0\n"%(label, data)
+    return prefix + data_section + text_section + postfix
 
 def AST_ASM(ast):
     return hdlr_goal(ast)

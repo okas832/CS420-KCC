@@ -226,6 +226,7 @@ class ARRIDX(INSTR):
     def __repr__(self):
         return "ARRIDX(%s, %s, %s)"%(self.dst, self.src1, self.src2)
 
+"""
 class REFER(INSTR):
     def __init__(self, dst, src):
         self.dst = dst
@@ -233,7 +234,7 @@ class REFER(INSTR):
 
     def __repr__(self):
         return "REFER(%s, %s)"%(self.dst, self.src)
-
+"""
 class DEREFER(INSTR):
     def __init__(self, dst, src):
         self.dst = dst
@@ -322,3 +323,10 @@ class IFELSEF(INSTR):
 
     def __repr__(self):
         return 'IFELSE(%s, %s, %s)' % (self.cond, self.if_stmt, self.else_stmt)
+
+class RET(INSTR):
+    def __init__(self, src):
+        self.src = src
+
+    def __repr__(self):
+        return "RETURN(%d)"%(self.src)
