@@ -6,9 +6,8 @@ char multi_cast = ('A' - 1 * 2 / (123 % 4) & 0x12 | 0x34 ^ 0x56 + (1 << 2) + (34
 int arr[2], *ptr1, **ptr2, *ptr_arr[123], arr2[10];
 
 int a(void) {
-    ;
-
-    ;
+    int expr_many_cast = (2, 3.4);
+    return (2, 3.4);
 }
 int b() {}
 int c(void) { }
@@ -16,6 +15,8 @@ int d(int arg1, float *arg2)
 {
     arg1++;
     *arg2 = 2.3;
+
+    return 0;
 }
 int e(int *arg1, int arg2[10]) { }
 void ret_void() { }
@@ -30,9 +31,9 @@ int main(void)
     a = f = c = 1;
     for (a = 0; a < b; a++, --b)
         if (a < b)
-            0;
+            break;
         else if (a > b)
-            1;
+            continue;
         else
             d(5, &f);
     
@@ -42,7 +43,7 @@ int main(void)
             b; // this is another comment // //
         else
             a;
-    
+
     c = 1;
     c *= 2.3;
 
