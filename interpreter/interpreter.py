@@ -301,9 +301,13 @@ def exec_stmt(stmt, env, func_body=False):
     elif isinstance(stmt, IFELSE):
         c = exec_expr(stmt.cond, env)
         if c.value:
-            exec_stmt(stmt.if_stmt, env)
+            ret = exec_stmt(stmt.if_stmt, env)
+            if isinstance(ret, VBREAK) or isinstance(ret, VCONTINUE) or isinstance(ret, VRETURN):
+                return ret
         elif stmt.else_stmt is not None:
-            exec_stmt(stmt.else_stmt, env)
+            ret = exec_stmt(stmt.else_stmt, env)
+            if isinstance(ret, VBREAK) or isinstance(ret, VCONTINUE) or isinstance(ret, VRETURN):
+                return ret
     elif isinstance(stmt, CONTINUE):
         return VCONTINUE()
     elif isinstance(stmt, BREAK):
@@ -377,7 +381,8 @@ def AST_INTERPRET(ast):
         else:  # isinstance(define, FDEF)
             define_func(define, env)
 
-    return exec_expr(CALL(ID("main"), []), env)
+    call_main = CALL(ID("main"), [])
+    exec_expr(call_main, env)
 
 
 if __name__ == "__main__":

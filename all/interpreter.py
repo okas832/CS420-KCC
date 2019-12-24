@@ -301,9 +301,13 @@ def exec_stmt(stmt, env, func_body=False):
     elif isinstance(stmt, IFELSE):
         c = exec_expr(stmt.cond, env)
         if c.value:
-            exec_stmt(stmt.if_stmt, env)
+            ret = exec_stmt(stmt.if_stmt, env)
+            if isinstance(ret, VBREAK) or isinstance(ret, VCONTINUE) or isinstance(ret, VRETURN):
+                return ret
         elif stmt.else_stmt is not None:
-            exec_stmt(stmt.else_stmt, env)
+            ret = exec_stmt(stmt.else_stmt, env)
+            if isinstance(ret, VBREAK) or isinstance(ret, VCONTINUE) or isinstance(ret, VRETURN):
+                return ret
     elif isinstance(stmt, CONTINUE):
         return VCONTINUE()
     elif isinstance(stmt, BREAK):
