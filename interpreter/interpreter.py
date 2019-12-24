@@ -36,9 +36,9 @@ def define_var(expr, env):
     assert isinstance(expr, VDEF)
 
     ctype = expr.type
-    for name, assign in expr.pl:
+    for vdefid, assign in expr.pl:
         val = exec_expr(assign, env) if assign is not None else None
-        env.add_var(name, ctype, val)
+        env.add_var(vdefid.name, ctype, val)
 
 
 def exec_cast(expr, env):
@@ -63,14 +63,19 @@ def exec_cast(expr, env):
 def exec_preop(expr, env):
     assert isinstance(expr, PREOP)
 
+    if expr.op == "++" or expr.op == "--":
+        var = lvalue_resolve(expr.expr, env)
+        val = var.get_value()
+
+        if expr.op == "++":
+            var.set_value(VALUE(val.value + 1, val.ctype))
+        else:
+            var.set_value(VALUE(val.value - 1, val.ctype))
+        return var.get_value()
+
     val = exec_expr(expr.expr, env)
 
-    # TODO: INC and DEC operator
-    if expr.op == "++":
-        pass
-    elif expr.op == "--":
-        pass
-    elif expr.op == "+":
+    if expr.op == "+":
         result = +val.value
     elif expr.op == "-":
         result = -val.value
@@ -79,6 +84,19 @@ def exec_preop(expr, env):
     elif expr.op == "!":
         result = not val.value
     return VALUE(result, val.ctype)
+
+
+def exec_postop(expr, env):
+    assert isinstance(expr, POSTOP)
+
+    var = lvalue_resolve(expr.expr, env)
+    val = var.get_value()
+    if expr.op == "++":
+        var.set_value(VALUE(val.value + 1, val.ctype))
+    else:
+        var.set_value(VALUE(val.value - 1, val.ctype))
+
+    return val
 
 
 def exec_binop(expr, env):
@@ -143,7 +161,7 @@ def exec_assign(expr, env):
     return lhs.set_value(rhs)
 
 
-def exec_expr(expr, genv, lenv):
+def exec_expr(expr, env):
     if isinstance(expr, IVAL):
         return VALUE(expr.val, TInt())
     elif isinstance(expr, FVAL):
@@ -198,13 +216,13 @@ def exec_expr(expr, genv, lenv):
 def exec_stmt(stmt, env):
     if isinstance(stmt, BODY):
         env.new_env()
-        declare_var(stmt.defvs, env)
+        for defv in stmt.defvs:
+            define_var(defv, env)
         for sub in stmt.stmts:
             exec_stmt(sub, env)
+        env.del_env()
     elif isinstance(stmt, EMPTY_STMT):
         pass
-    elif isinstance(stmt, EXPR_MANY):
-        exec_expr(stmt, env)
     elif isinstance(stmt, WHILE):
         c = exec_expr(stmt.cond, env)
         while c.value:
@@ -231,11 +249,15 @@ def exec_stmt(stmt, env):
         if stmt.expr is not None:
             return exec_expr(stmt.expr, env)
         return None
+    else:
+        exec_expr(stmt, env)
 
 
-def test(ast):
-    assert isinstance(ast, GOAL)
+
+if __name__ == "__main__":
 
     env = ENV()
 
-    exec_expr(ast, env)
+    with open("input.c", "r") as f:
+        result = AST_TYPE(AST_YACC(f.read()))
+    exec_stmt(result, env)
