@@ -148,8 +148,10 @@ def exec_binop(expr, env):
         lhs = exec_expr(expr.lhs, env)
         if lhs.value and expr.op == "||":
             result = True
+            env.interface.check(expr.rhs.lineno.end, skip=True)
         elif not lhs.value and expr.op == "&&":
             result = False
+            env.interface.check(expr.rhs.lineno.end, skip=True)
         else:
             rhs = exec_expr(expr.rhs, env)
             if expr.op == "&&":
