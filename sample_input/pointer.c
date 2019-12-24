@@ -1,7 +1,7 @@
-int some(char *s)
+void some(char *s)
 {
     if (s[0] == 0)
-        return 0;
+        return;
     else
     {
         some(&s[1]);
