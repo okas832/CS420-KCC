@@ -27,7 +27,7 @@ def define_func(expr, env):
 
 
 def define_var(expr, env):
-    assert isinstance(expr, VDEFID)
+    assert isinstance(expr, VDEF)
 
     ctype = expr.type
     for name, assign in expr.pl:
@@ -194,6 +194,7 @@ def exec_expr(expr, genv, lenv):
 
 def exec_stmt(stmt, env):
     if isinstance(stmt, BODY):
+        # for stmt.defvs:
         pass
     elif isinstance(stmt, EMPTY_STMT):
         pass
