@@ -94,9 +94,15 @@ def exec_preop(expr, env):
         val = var.get_value()
 
         if expr.op == "++":
-            var.set_value(VALUE(val.value + 1, val.ctype))
+            if isinstance(val, VPTR) and isinstance(val.deref(), VARRAY):
+                var.set_value(VPTR(val.deref().subscr(1)))
+            else:
+                var.set_value(VALUE(val.value + 1, val.ctype))
         else:
-            var.set_value(VALUE(val.value - 1, val.ctype))
+            if isinstance(val, VPTR) and isinstance(val.deref(), VARRAY):
+                var.set_value(VPTR(val.deref().subscr(-1)))
+            else:
+                var.set_value(VALUE(val.value - 1, val.ctype))
         return var.get_value()
 
     val = exec_expr(expr.expr, env)
@@ -118,9 +124,15 @@ def exec_postop(expr, env):
     var = lvalue_resolve(expr.expr, env)
     val = var.get_value()
     if expr.op == "++":
-        var.set_value(VALUE(val.value + 1, val.ctype))
+        if isinstance(val, VPTR) and isinstance(val.deref(), VARRAY):
+            var.set_value(VPTR(val.deref().subscr(1)))
+        else:
+            var.set_value(VALUE(val.value + 1, val.ctype))
     else:
-        var.set_value(VALUE(val.value - 1, val.ctype))
+        if isinstance(val, VPTR) and isinstance(val.deref(), VARRAY):
+            var.set_value(VPTR(val.deref().subscr(-1)))
+        else:
+            var.set_value(VALUE(val.value - 1, val.ctype))
 
     return val
 
@@ -130,6 +142,21 @@ def exec_binop(expr, env):
 
     lhs = exec_expr(expr.lhs, env)
     rhs = exec_expr(expr.rhs, env)
+
+    if isinstance(lhs, VPTR):
+        if isinstance(rhs, VPTR):
+            # only allow subtraction & comparators against pointers to same array (of possibly different indices)
+            if isinstance(lhs.deref_var, VARRAY) and isinstance(rhs.deref_var, VARRAY) and \
+                lhs.deref_var.array is rhs.deref_var.array and expr.op in ["-", "<", ">", "<=", ">=", "==", "!="]:
+                lhs = VALUE(lhs.deref_var.index, TInt())
+                rhs = VALUE(rhs.deref_var.index, TInt())
+            else:
+                raise RuntimeError("Invalid binary operation against pointer types")
+        elif isinstance(rhs, VALUE) and (isinstance(rhs.ctype, TInt) or isinstance(rhs.ctype, TChar)) and expr.op == "+":
+            return VPTR(lhs.deref().subscr(rhs.value))
+        else:
+            raise RuntimeError("Invalid binary operation against pointer types")
+
     assert lhs.ctype == rhs.ctype
     ctype = lhs.ctype
 
@@ -460,6 +487,6 @@ def AST_INTERPRET(ast):
 
 
 if __name__ == "__main__":
-    with open("../sample_input/hanoi.c", "r") as f:
+    with open("../sample_input/pointer_op.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     AST_INTERPRET(result)

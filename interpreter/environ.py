@@ -80,7 +80,7 @@ class VALUE():
         return "(%s) %d" % (self.ctype, self.value)
 
 
-class VARRAY(VALUE):
+class VARRAY(VAR):
     def __init__(self, name, ctype):
         assert isinstance(ctype, TArr)
         self.array = [VAR("%s[%d]" % (name, i), ctype.elem_type, None) for i in range(ctype.arr_size)]
@@ -88,16 +88,18 @@ class VARRAY(VALUE):
         self.ctype = ctype.elem_type
 
     def subscr(self, idx):
-        if self.index + idx not in range(len(self.array)):
-            raise RuntimeError("Array index out of range")
         new = copy(self)
         new.index += idx
         return new
 
     def get_value(self):
+        if self.index not in range(len(self.array)):
+            raise RuntimeError("Array index out of range")
         return self.array[self.index].get_value()
 
     def set_value(self, val):
+        if self.index not in range(len(self.array)):
+            raise RuntimeError("Array index out of range")
         return self.array[self.index].set_value(val)
 
 
