@@ -3,7 +3,7 @@ from copy import copy
 
 
 class ENV():
-    def __init__(self):
+    def __init__(self, interface):
         printf_type = TFunc(TInt(), [])
         printf_var = VAR("printf", printf_type, VFUNC("printf", printf_type, [], BODY([], [], Ln((-1, -1)))))
         malloc_type = TFunc(TPtr(TChar()), [])
@@ -11,6 +11,7 @@ class ENV():
         free_type = TFunc(TVoid(), [])
         free_var = VAR("free", free_type, VFUNC("free", free_type, [], BODY([], [], Ln((-1, -1)))))
         self.envs = [{"printf": printf_var, "malloc": malloc_var, "free": free_var}]
+        self.interface = interface
 
     def new_env(self):
         self.envs.append({})
@@ -36,7 +37,7 @@ class ENV():
         raise SyntaxError("'%s' undeclared (first use in this function)" % name)
 
     def global_env(self):
-        env = ENV()
+        env = ENV(self.interface)
         env.envs[0] = self.envs[0]
         return env
 
@@ -87,6 +88,7 @@ class VALUE():
 class VARRAY(VAR):
     def __init__(self, name, ctype):
         assert isinstance(ctype, TArr)
+        self.name = name
         self.array = [VAR("%s[%d]" % (name, i), ctype.elem_type, None) for i in range(ctype.arr_size)]
         self.index = 0
         self.ctype = ctype.elem_type
@@ -105,6 +107,10 @@ class VARRAY(VAR):
         if self.index not in range(len(self.array)):
             raise RuntimeError("Array index out of range")
         return self.array[self.index].set_value(val)
+
+    def __repr__(self):
+        assert self.ctype != TVoid()
+        return "%s %s[%d]" % (self.ctype, self.name, len(self.array))
 
 
 class VPTR(VALUE):

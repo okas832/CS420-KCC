@@ -80,6 +80,7 @@ def p_array_2(p):
 def p_deff(p):
     """deff : type id_adv LPAREN s_args RPAREN LBRACE body RBRACE"""
     p[0] = FDEF(p[1], p[2], p[4], p[7], Ln(p.linespan(0)))
+    p[0].body.lineno = Ln((p.lineno(6), p.lineno(8)))
 
 
 # for special case(no argument)
@@ -115,7 +116,7 @@ def p_arg(p):
 # body : *[defv] *[stmt]
 def p_body_1(p):
     """body : pre_defv_many pre_stmt_many"""
-    p[0] = BODY(p[1], p[2], Ln(p.linespan(0)))
+    p[0] = BODY(p[1], p[2], None)
 
 
 def p_pre_defv_many_1(p):
@@ -166,6 +167,7 @@ def p_stmt_1(p):
 def p_stmt_2(p):
     """stmt : LBRACE body RBRACE"""
     p[0] = p[2]
+    p[0].lineno = Ln(p.linespan(0))
 
 
 # EXPR_MANY
