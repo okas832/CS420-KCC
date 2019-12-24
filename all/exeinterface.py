@@ -9,8 +9,8 @@ class Interface:
     def __init__(self, filename):
         self.filename = filename
         self.console = None
-        self.linenum = 0
-        self.linecnt = 0
+        self.linecurr = 0
+        self.lineuntil = 0
     
     def loadfile(self):
         try:
@@ -22,21 +22,19 @@ class Interface:
         self.AST = AST_YACC(self.file.read())
         self.AST = AST_TYPE(self.AST)
 
-    def init(self):
+    def load(self):
         self.loadfile()
         self.makeAST()
 
-    def executelin():
-        # todo : execute just one line by AST lineno info and linenum
-        # then update linecnt
-        pass
-
-    def execute(self):
-        if self.linecnt == 0:
-            self.console.prompt()
-        self.executeline()
-        execute()
-        
+    def execute(AST):
+        ## check line variables before executing current node
+        if self.linecurr >= self.lineuntil:
+            self.linecurr = self.lineuntil
+            self.console(self.linecurr)
+        else:
+            # todo : exe 1 line and update variables
+            pass
+        ## recursively execute child nodes
 
     def start():
         execute()

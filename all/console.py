@@ -12,28 +12,31 @@ class Console:
         self.filename = filename
         self.interface = Interface(filename)
         self.interface.console = self
+        self.linecurr = 0
 
     def init(self):
-        self.interface.init()
+        self.interface.load()
 
-    def prompt(self):
-        command = input('> ')
-        args = command.split(' ')
-        if args[0] == 'print' or args[0] == 'trace':
-            if len(args) <= 1:
-                raise commandError()
-            else:
-                cli = args[0]
-                var = args[1]
-                logger.command(cli, var)
-        elif args[0] == 'next':
-            cnt = 0
-            if len(args) <= 1:
-                cnt = 1
-            else:
-                cnt = int(args[1])
-            self.interface.linecnt = cnt
-            return
+    def prompt(self, interpcurline):
+        self.linecurr = interpcurline
+        while True:
+            command = input('> ')
+            args = command.split(' ')
+            if args[0] == 'print' or args[0] == 'trace':
+                if len(args) <= 1:
+                    raise commandError()
+                else:
+                    cli = args[0]
+                    var = args[1]
+                    logger.command(cli, var)
+            elif args[0] == 'next':
+                cnt = 0
+                if len(args) <= 1:
+                    cnt = 1
+                else:
+                    cnt = int(args[1])
+                self.interface.lineuntil = self.linecurr + cnt
+                return
 
 def main():
     console = console("input.c")
