@@ -13,7 +13,7 @@ class ENV():
 
     def add_var(self, name, ctype, value=None):
         if isinstance(ctype, TArr):
-            self.envs[-1][name] = VARRAY(name, ctype)
+            self.envs[-1][name] = VAR(name, ctype, VPTR(VARRAY(name, ctype)))
         elif isinstance(ctype, TFunc):
             assert value is not None
             self.envs[-1][name] = value
@@ -84,6 +84,8 @@ class VARRAY(VALUE):
         self.index = 0
 
     def subscr(self, idx):
+        if self.index + idx >= len(self.array):
+            raise RuntimeError("Array index out of range")
         new = self.copy()
         new.index += idx
         return new

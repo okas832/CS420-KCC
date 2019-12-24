@@ -12,17 +12,24 @@ def lvalue_resolve(expr, env):
         if isinstance(val, VPTR):
             return val.deref()
         elif isinstance(val, VARRAY):
-            return val.get()
+            return val
         else:
             raise TypeError("invalid type argument of unary '*' (have '%s')" % val.ctype)
     if isinstance(expr, ID):
         return env.id_resolve(expr.name)
     if isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID):
         idx = exec_expr(expr.idxexpr, env)
-        var = env.id_resolve(expr.arrexpr.name)
-        new_var = var.copy().subscr(idx)
-        return new_var
-        # raise TypeError("array subscript is not an integer")
+        var = exec_expr(expr.arrexpr, env)
+
+        if not isinstance(var, VPTR):
+            raise TypeError("Cannot array subscript")
+
+        if isinstance(var.deref(), VARRAY):
+            return var.deref().subscr(idx)
+        elif idx.value == 0:
+            return var.deref()
+
+        raise TypeError("Cannot array subscript")
 
 
 def define_func(fdef, env):
@@ -59,7 +66,8 @@ def exec_cast(expr, env):
     elif isinstance(expr, F2I):
         assert result.ctype == TFloat()
         return VALUE(result.value, TInt())
-
+    if isinstance(expr, A2P):
+        return result
     raise ValueError("Not Implemented Type Casting: %s" % result.expr)
 
 
@@ -170,23 +178,35 @@ def exec_expr(expr, env):
     elif isinstance(expr, FVAL):
         return VALUE(expr.val, TFloat())
     elif isinstance(expr, SVAL):
-        pass
+        string = expr.val[1:-1].encode('utf-8').decode('unicode_escape')
+        arr = VARRAY("", TArr(TChar(), len(string) + 1))
+        for i, s in enumerate(string):
+            arr.array[i].set_value(ord(s))
+        arr.array[-1].set_value(0)
+        return VPTR(arr)
     elif isinstance(expr, CVAL):
-        return VALUE(expr.val, TChar())
+        char = expr.val[1:-1].encode('utf-8').decode('unicode_escape')
+        return VALUE(ord(char), TChar())
     elif isinstance(expr, TEXPR):
         return exec_cast(expr, env)
     elif isinstance(expr, ID):
         var = env.id_resolve(expr.name)
         if isinstance(var, VAR):
             return var.get_value()
-        else:
-            assert isinstance(var, list)
-            return var
+        return var
     elif isinstance(expr, SUBSCR):
         arr = exec_expr(expr.arrexpr, env)
         idx = exec_expr(expr.idxexpr, env)
-        assert isinstance(arr, list)
-        return arr[idx].get_value()
+
+        if not isinstance(var, VPTR):
+            raise TypeError("Cannot array subscript")
+
+        if isinstance(var.deref(), VARRAY):
+            return var.deref().subscr(idx).get_value()
+        elif idx.value == 0:
+            return var.deref().get_value()
+
+        raise TypeError("Cannot array subscript")
     elif isinstance(expr, CALL):
         func = exec_expr(expr.funcexpr, env)
         assert isinstance(func, VFUNC)
@@ -201,18 +221,14 @@ def exec_expr(expr, env):
             exec_stmt(func.body, func_env, True)
         pass
     elif isinstance(expr, POSTOP):
-        # TODO: should handle ++, --
-        pass
+        return exec_postop(expr, env)
     elif isinstance(expr, ADDR):
         return VPTR(lvalue_resolve(expr, env))
     elif isinstance(expr, DEREF):
         val = exec_expr(expr.expr, env)
         if isinstance(val, VPTR):
             return val.deref().get_value()
-        elif isinstance(val, list):
-            return val[0].get_value()
-        else:
-            raise ValueError("Cannot dereference '%s'" % val)
+        raise ValueError("Cannot dereference '%s'" % val)
     elif isinstance(expr, PREOP):
         return exec_preop(expr, env)
     elif isinstance(expr, BINOP):
