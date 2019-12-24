@@ -116,7 +116,7 @@ def VDEF_resolve(vdef, env, target_env, is_const=False):
 
         if vdefid.name in target_env:
             raise SyntaxError("redefinition of '%s'" % vdefid.name)
-        target_env[vdefid.name] = var_type
+        vdefid.var_type = target_env[vdefid.name] = var_type
 
 
 def STMT_resolve(stmt, env, ret_type, inside_loop=False):
@@ -199,14 +199,22 @@ def AST_TYPE(ast):
 
             if define.name.name in genv:
                 raise SyntaxError("redefinition of '%s'" % define.name.name)
-            genv[define.name.name] = TFunc(ret_type, arg_types)
+            elif define.name.name == "printf":
+                raise SyntaxError("redefinition of built-in function '%s'" % define.name.name)
+            define.func_type = genv[define.name.name] = TFunc(ret_type, arg_types)
 
             body_resolve(define.body, [genv, args_env], ret_type, True)
+
+    main_type_expect = TFunc(TInt(), [])
+    if "main" not in genv:
+        raise SyntaxError("Entrypoint undefined (undefined reference to 'main')")
+    elif genv["main"] != main_type_expect:
+        raise TypeError("Entrypoint 'main' type invalid (expected %s, got %s)" % (main_type_expect, genv["main"]))
 
     return ast
 
 
 if __name__ == "__main__":
-    with open("a.c", "r") as f:
+    with open("input.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     print(result)

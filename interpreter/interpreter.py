@@ -381,6 +381,6 @@ def AST_INTERPRET(ast):
 
 
 if __name__ == "__main__":
-    with open("../sample_input/sum.c", "r") as f:
+    with open("../sample_input/recursive.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     AST_INTERPRET(result)

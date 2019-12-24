@@ -33,7 +33,7 @@ class ENV():
 
     def global_env(self):
         env = ENV()
-        env.envs.append(self.envs[0])
+        env.envs[0] = self.envs[0]
         return env
 
 
