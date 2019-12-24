@@ -1,5 +1,3 @@
-from ctype import *
-
 # there are two History; global and main
 class History(list):
     def __init__(self, scope):
@@ -13,11 +11,6 @@ class History(list):
 # extremely hard case
 # break in the simple struct or sudden return of the function in the deep struct
 # executor에서 넘겨주는거 봐서 수정필요 할듯 얼마나 del 해야 하는지
-# scope : function, loop, block
-# normal execution : del once
-# continue -> del before loop (not del loop)
-# break -> del until loop (del loop)
-# return -> del until function
     def del_table(self):
         self.pop()
 
@@ -39,28 +32,19 @@ class HistoryTable:
             return "no"
 
     # add new variable to the table
-    def var_declare(self, var, ctype, line):
-        if isinstance(ctype, TArr):
-            temp = []
-            for i in range(ctype.arr_size):
-               temp.append("N/A")
-            entry = (var, [(line, tuple(temp))])
-            self.body.append(entry)
-        else:
-            entry = (var, [(line, "N/A")])
-            self.body.append(entry)
+    def var_declare(self, var, line):
+        entry = (var, [(line, "N/A")])
+        self.body.append(entry)
 
     # add new history to the corresponding variable
-    
-    # Array인 경우 추가 수정 필요
     def var_change(self, var, line, value):
-        temp = (line, value)
+        change = (line, value)
         index = self.var_find(var)
 
         if index == "no":
             return "no"
         else:
-            self.body[index][1].append(temp)
+            self.body[index][1].append(change)
 
 
 # CLI command : print, trace
