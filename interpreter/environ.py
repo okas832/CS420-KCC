@@ -1,4 +1,5 @@
 from ctype import *
+from copy import copy
 
 
 class ENV():
@@ -84,11 +85,12 @@ class VARRAY(VALUE):
         assert isinstance(ctype, TArr)
         self.array = [VAR("%s[%d]" % (name, i), ctype.elem_type, None) for i in range(ctype.arr_size)]
         self.index = 0
+        self.ctype = ctype.elem_type
 
     def subscr(self, idx):
         if self.index + idx >= len(self.array):
             raise RuntimeError("Array index out of range")
-        new = self.copy()
+        new = copy(self)
         new.index += idx
         return new
 
@@ -102,6 +104,7 @@ class VARRAY(VALUE):
 class VPTR(VALUE):
     def __init__(self, deref_var):
         assert isinstance(deref_var, VAR) or isinstance(deref_var, VARRAY)
+        self.ctype = TPtr(deref_var.ctype)
         self.deref_var = deref_var
 
     def deref(self):

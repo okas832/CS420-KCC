@@ -41,7 +41,7 @@ def lvalue_resolve(expr, env):
             raise TypeError("Cannot array subscript")
 
         if isinstance(var.deref(), VARRAY):
-            return var.deref().subscr(idx)
+            return var.deref().subscr(idx.value)
         elif idx.value == 0:
             return var.deref()
 
@@ -213,13 +213,13 @@ def exec_expr(expr, env):
         arr = exec_expr(expr.arrexpr, env)
         idx = exec_expr(expr.idxexpr, env)
 
-        if not isinstance(var, VPTR):
+        if not isinstance(arr, VPTR):
             raise TypeError("Cannot array subscript")
 
-        if isinstance(var.deref(), VARRAY):
-            return var.deref().subscr(idx).get_value()
+        if isinstance(arr.deref(), VARRAY):
+            return arr.deref().subscr(idx.value).get_value()
         elif idx.value == 0:
-            return var.deref().get_value()
+            return arr.deref().get_value()
 
         raise TypeError("Cannot array subscript")
     elif isinstance(expr, CALL):
@@ -236,7 +236,11 @@ def exec_expr(expr, env):
             for argexpr, argname, argtype in zip(expr.argexprs, func.arg_names, func.ctype.arg_types):
                 arg = exec_expr(argexpr, env)
                 func_env.add_var(argname, argtype, arg)
-            return exec_stmt(func.body, func_env, True)
+            ret = exec_stmt(func.body, func_env, True)
+            if isinstance(ret, VRETURN):
+                return ret.ret_val
+            else:
+                return None
     elif isinstance(expr, POSTOP):
         return exec_postop(expr, env)
     elif isinstance(expr, ADDR):
@@ -337,24 +341,24 @@ def builtin_printf(args):
         if fmt[i:i+2] == r"%d":
             if arg_idx >= len(args):
                 raise RuntimeError("Insufficient variadic arguments while executing built-in printf")
-            elif not isinstance(args[arg_idx], int):
+            elif not isinstance(args[arg_idx].ctype, TInt) and not isinstance(args[arg_idx].ctype, TChar):
                 raise RuntimeError("Invalid argument type while executing built-in printf (expected int/char, got %s)" % type(args[arg_idx]))
-            res += str(args[arg_idx])
+            res += str(args[arg_idx].value)
             i += 2
             arg_idx += 1
         elif fmt[i:i+2] == r"%f":
             if arg_idx >= len(args):
                 raise RuntimeError("Insufficient variadic arguments while executing built-in printf")
-            elif not isinstance(args[arg_idx], float):
+            elif not isinstance(args[arg_idx].ctype, TFloat):
                 raise RuntimeError("Invalid argument type while executing built-in printf (expected float, got %s)" % type(args[arg_idx]))
-            res += str(args[arg_idx])
+            res += str(args[arg_idx].value)
             i += 2
             arg_idx += 1
         else:
             res += fmt[i]
             i += 1
 
-    # print(res, end='')
+    print(res, end='')
 
     if arg_idx != len(args):
         warnings.warn("Trailing variadic arguments after executing built-in printf (%d arguments unused)" % (len(args) - arg_idx), RuntimeWarning)
@@ -372,12 +376,11 @@ def AST_INTERPRET(ast):
             define_var(define, env)
         else:  # isinstance(define, FDEF)
             define_func(define, env)
-        print(env.envs)
 
     exec_stmt(env.id_resolve("main").body, env)
 
 
 if __name__ == "__main__":
-    with open("../sample_input/gcd.c", "r") as f:
+    with open("../sample_input/sum.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     AST_INTERPRET(result)

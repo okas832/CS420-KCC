@@ -15,7 +15,7 @@ int main(void){
 	int record[10];
 	float total;
 
-	count = 11;
+	count = 10;
 	total = 0;
 	
 	printf("record :");
