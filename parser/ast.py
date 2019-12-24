@@ -1,7 +1,6 @@
 class Ln:
-    def __init__(self, s, e):
-        self.start = s
-        self.end = e
+    def __init__(self, linespan):
+        self.start, self.end = linespan
     def __repr__(self):
         return "%d-%d" % (self.start, self.end)
 
