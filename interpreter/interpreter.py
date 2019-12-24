@@ -22,8 +22,14 @@ def lvalue_resolve(expr, env):
         # raise TypeError("array subscript is not an integer")
 
 
-def define_func(expr, env):
-    assert isinstance(expr, FDEF)
+def define_func(fdef, env):
+    assert isinstance(fdef, FDEF)
+
+    # type annotation exists, although it is not isinstance(fdef, EXPR)
+    ctype = fdef.func_type
+    arg_names = [arg[0] for arg in fdef.arg]
+    value = VFUNC(fdef.name, ctype, arg_names, fdef.body)
+    env.add_var(fdef.name, ctype, value)
 
 
 def define_var(expr, env):
@@ -31,11 +37,8 @@ def define_var(expr, env):
 
     ctype = expr.type
     for name, assign in expr.pl:
-        if assign is not None:
-            val = exec_expr(assign, env)
-        env.add_var(name, ctype)
-        if assign is not None:
-            env.id_resolve(name).set_value(val)
+        val = exec_expr(assign, env) if assign is not None else None
+        env.add_var(name, ctype, val)
 
 
 def exec_cast(expr, env):

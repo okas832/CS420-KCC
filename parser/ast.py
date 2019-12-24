@@ -40,6 +40,7 @@ class FDEF(AST):
         self.name = name
         self.arg = arg
         self.body = body
+        self.func_type = None  # type annotation added by AST_TYPE
 
     def __repr__(self):
         return 'FDEF("%s", %s, %s, %s)' % (self.type, self.name, self.arg, self.body)

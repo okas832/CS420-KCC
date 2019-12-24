@@ -199,7 +199,7 @@ def AST_TYPE(ast):
 
             if define.name.name in genv:
                 raise SyntaxError("redefinition of '%s'" % define.name.name)
-            genv[define.name.name] = TFunc(ret_type, arg_types)
+            define.func_type = genv[define.name.name] = TFunc(ret_type, arg_types)
 
             body_resolve(define.body, [genv, args_env], ret_type, True)
 
