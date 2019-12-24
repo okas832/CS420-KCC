@@ -1,0 +1,27 @@
+시작하는 라인을 9 라고 생각하고 했는데 구현에 따라 8일 수도 있겠네요.
+결과가 이상하면 처음에 next 한번 더 해주세요.
+trace num 하는 부분이 function call 중간인데 구현에 따라 횟수가 좀 달라질 수 있어서 trace 제대로 안 찍힐 수 있습니다.
+
+
+>> next
+>> print a
+	N/A
+>> next 2
+>> print a
+	Invisible variable
+>> print num
+	50
+>> next 150
+>> print num
+	(25 근처 숫자 나올 듯)
+>> trace num
+	num = N/A at line 1
+	num = (25근처 숫자) at line 1
+>> next 200
+	1275
+	End of program
+>> trace num
+	Invisible variable
+>> trace a
+	a = N/A at line 9
+	a = 1275 at line 10
