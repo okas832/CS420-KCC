@@ -11,6 +11,8 @@ def lvalue_resolve(expr, env):
         val = exec_expr(expr.expr, env)
         if isinstance(val, VPTR):
             return val.deref()
+        elif isinstance(val, VARRAY):
+            return val.get()
         else:
             raise TypeError("invalid type argument of unary '*' (have '%s')" % val.ctype)
     if isinstance(expr, ID):
@@ -18,7 +20,8 @@ def lvalue_resolve(expr, env):
     if isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID):
         idx = exec_expr(expr.idxexpr, env)
         var = env.id_resolve(expr.arrexpr.name)
-        return var[idx.value]
+        new_var = var.copy().subscr(idx)
+        return new_var
         # raise TypeError("array subscript is not an integer")
 
 

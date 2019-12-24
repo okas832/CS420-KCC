@@ -85,14 +85,18 @@ class VARRAY(VALUE):
 
     def subscr(self, idx):
         self.index += idx
+        return self
 
-    def get(self):
-        return self.array[self.index]
+    def get_value(self):
+        return self.array[self.index].get_value()
+
+    def set_value(self, val):
+        return self.array[self.index].get_value()
 
 
 class VPTR(VALUE):
     def __init__(self, deref_var):
-        assert isinstance(deref_var, VAR)
+        assert isinstance(deref_var, VAR) or isinstance(deref_var, VARRAY)
         self.deref_var = deref_var
 
     def deref(self):
