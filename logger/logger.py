@@ -1,3 +1,5 @@
+from ctype import *
+
 # there are two History; global and main
 class History(list):
     def __init__(self, scope):
