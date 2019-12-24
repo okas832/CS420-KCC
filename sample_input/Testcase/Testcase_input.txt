@@ -1,0 +1,47 @@
+시작하는 라인을 13 이라고 생각하고 했는데 top of main function이면 12일 수도 있겠네요.
+결과가 이상하면 처음에 next 한번 더 해주세요.
+
+>> next
+>> print count
+	N/A
+>> print record
+	Invisible variable
+>> next
+>> print record
+	['N/A', 'N/A', 'N/A', 'N/A', 'N/A']
+>> next 7
+>> print count
+	5
+>> next 20
+	value : 0
+	value : 1
+	value : 2
+	value : 3
+>> print record
+	[0, 1, 2, 3, 'N/A']
+>> next 5
+	value : 4
+>> next 2
+>> next
+	Start...
+>> next 1000
+	Average : 0.000000
+	Average : 0.500000
+	Average : 1.000000
+	Average : 1.500000
+	Average : 2.000000
+	*** total exceeds 3!***
+	End of program
+>> trace i
+	i = N/A at line 13
+	i = 0 at line 20
+	i = 1 at line 20
+	i = 2 at line 20
+	i = 3 at line 20
+	i = 4 at line 20
+	i = 5 at line 20
+	i = 0 at line 28
+	i = 1 at line 28
+	i = 2 at line 28
+	i = 3 at line 28
+	i = 4 at line 28
