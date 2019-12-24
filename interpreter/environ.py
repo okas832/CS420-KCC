@@ -13,12 +13,12 @@ class ENV():
 
     def add_var(self, name, ctype, value=None):
         if isinstance(ctype, TArr):
-            self.envs[-1][name] = [VAR("%s[%d]" % (name, i), ctype.elem_type, self) for i in range(ctype.arr_size)]
+            self.envs[-1][name] = VARRAY(name, ctype)
         elif isinstance(ctype, TFunc):
             assert value is not None
             self.envs[-1][name] = value
         else:
-            self.envs[-1][name] = VAR(name, ctype, self)
+            self.envs[-1][name] = VAR(name, ctype, None)
             if value is not None:
                 self.envs[-1][name].set_value(value)
 
@@ -27,6 +27,28 @@ class ENV():
             if env.get(name) is not None:
                 return env[name]
         raise SyntaxError("'%s' undeclared (first use in this function)" % expr.name)
+
+
+class VAR():
+    def __init__(self, name, ctype, value):
+        self.name = name
+        self.ctype = ctype
+        self.value = value
+
+    def set_value(self, value):
+        assert self.ctype == value.ctype
+        self.value = value
+        return self.value
+
+    def get_value(self):
+        if self.value is None:
+            raise RuntimeError("'%s' is uninitialized" % self.name)
+        return self.value
+
+    def __repr__(self):
+        if self.ctype == TVoid():
+            return "(void)"
+        return "(%s) %s" % (self.ctype, self.name)
 
 
 class VALUE():
@@ -50,25 +72,17 @@ class VALUE():
         return "(%s) %d" % (self.ctype, self.value)
 
 
-class VAR(VALUE):
-    def __init__(self, name, ctype, env):
-        self.name = name
-        self.ctype = ctype
-        self.env = env
-        self.value = VALUE(0, self.ctype)
+class VARRAY(VALUE):
+    def __init__(self, name, ctype):
+        assert isinstance(ctype, TArr)
+        self.array = [VAR("%s[%d]" % (name, i), ctype.elem_type, None) for i in range(ctype.arr_size)]
+        self.index = 0
 
-    def set_value(self, value):
-        assert self.ctype == value.ctype
-        self.value = value
-        return self.value
+    def subscr(self, idx):
+        self.index += idx
 
-    def get_value(self):
-        return self.value
-
-    def __repr__(self):
-        if self.ctype == TVoid():
-            return "(void)"
-        return "(%s) %s" % (self.ctype, self.name)
+    def get(self):
+        return self.array[self.index]
 
 
 class VPTR(VALUE):
@@ -91,7 +105,7 @@ class VFUNC(VALUE):
         self.ctype = ctype
         self.arg_names = arg_names
         self.body = body
-    
+
     def __repr__(self):
         return "%s %s(%s) %s" % (self.ctype.ret_type, self.name,
             ', '.join('%s %s' % (self.ctype.arg_types[i], self.ctype.arg_names[i]) for i in range(len(this.arg_names))),
