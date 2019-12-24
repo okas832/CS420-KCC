@@ -5,8 +5,12 @@ from copy import copy
 class ENV():
     def __init__(self):
         printf_type = TFunc(TInt(), [])
-        printf_var = VAR("printf", printf_type, VFUNC("printf", printf_type, [], BODY([], [], (-1, -1))))
-        self.envs = [{"printf": printf_var}]
+        printf_var = VAR("printf", printf_type, VFUNC("printf", printf_type, [], BODY([], [])))
+        malloc_type = TFunc(TPtr(TChar()), [])
+        malloc_var = VAR("malloc", malloc_type, VFUNC("malloc", malloc_type, [], BODY([], [])))
+        free_type = TFunc(TVoid(), [])
+        free_var = VAR("free", free_type, VFUNC("free", free_type, [], BODY([], [])))
+        self.envs = [{"printf": printf_var, "malloc": malloc_var, "free": free_var}]
 
     def new_env(self):
         self.envs.append({})
