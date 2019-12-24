@@ -154,6 +154,8 @@ def exec_binop(expr, env):
                 raise RuntimeError("Invalid binary operation against pointer types")
         elif isinstance(rhs, VALUE) and (isinstance(rhs.ctype, TInt) or isinstance(rhs.ctype, TChar)) and expr.op == "+":
             return VPTR(lhs.deref().subscr(rhs.value))
+        elif isinstance(rhs, VALUE) and (isinstance(rhs.ctype, TInt) or isinstance(rhs.ctype, TChar)) and expr.op == "-":
+            return VPTR(lhs.deref().subscr(-rhs.value))
         else:
             raise RuntimeError("Invalid binary operation against pointer types")
 
@@ -485,6 +487,10 @@ def builtin_free(args):
     return None
 
 
+def mem_command():
+
+
+
 def AST_INTERPRET(ast):
     assert isinstance(ast, GOAL)
 
@@ -496,7 +502,7 @@ def AST_INTERPRET(ast):
         else:  # isinstance(define, FDEF)
             define_func(define, env)
 
-    exec_expr(CALL(ID("main", (-1, -1)), [], (-1, -1)), env)
+    return exec_expr(CALL(ID("main", (-1, -1)), [], (-1, -1)), env)
 
 
 if __name__ == "__main__":

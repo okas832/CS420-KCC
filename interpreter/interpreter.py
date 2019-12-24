@@ -154,6 +154,8 @@ def exec_binop(expr, env):
                 raise RuntimeError("Invalid binary operation against pointer types")
         elif isinstance(rhs, VALUE) and (isinstance(rhs.ctype, TInt) or isinstance(rhs.ctype, TChar)) and expr.op == "+":
             return VPTR(lhs.deref().subscr(rhs.value))
+        elif isinstance(rhs, VALUE) and (isinstance(rhs.ctype, TInt) or isinstance(rhs.ctype, TChar)) and expr.op == "-":
+            return VPTR(lhs.deref().subscr(-rhs.value))
         else:
             raise RuntimeError("Invalid binary operation against pointer types")
 
@@ -450,7 +452,7 @@ def builtin_free(args):
 
     if not isinstance(args[0].ctype, VPTR) and \
        not isinstance(args[0].deref(), VARRAY) or \
-       not isinstance(args[0].deref().get_value().ctype, TChar):
+       not isinstance(args[0].deref().ctype, TChar):
        raise RuntimeError("not allocated address")
 
     if args[0].deref().array is not malloc_buffer.array:
@@ -485,6 +487,10 @@ def builtin_free(args):
     return None
 
 
+def mem_command():
+
+
+
 def AST_INTERPRET(ast):
     assert isinstance(ast, GOAL)
 
@@ -496,10 +502,10 @@ def AST_INTERPRET(ast):
         else:  # isinstance(define, FDEF)
             define_func(define, env)
 
-    exec_expr(CALL(ID("main", (-1, -1)), [], (-1, -1)), env)
+    return exec_expr(CALL(ID("main", (-1, -1)), [], (-1, -1)), env)
 
 
 if __name__ == "__main__":
-    with open("../sample_input/mergesort.c", "r") as f:
+    with open("../sample_input/memcopy.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     AST_INTERPRET(result)
