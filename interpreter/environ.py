@@ -76,3 +76,18 @@ class VPTR(VALUE):
 
     def __repr__(self):
         return "&%s" % self.deref_var
+
+
+class VFUNC(VALUE):
+    def __init__(self, name, ctype, arg_names, body):
+        assert isinstance(body, TFunc)
+        assert len(ctype.arg_types) == len(ctype.arg_names)
+        self.name = name
+        self.ctype = ctype
+        self.arg_names = arg_names
+        self.body = body
+    
+    def __repr__(self):
+        return "%s %s(%s) %s" % (self.ctype.ret_type, self.name,
+            ', '.join('%s %s' % (self.ctype.arg_types[i], self.ctype.arg_names[i]) for i in range(len(this.arg_names))),
+            self.body)
