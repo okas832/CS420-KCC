@@ -257,6 +257,16 @@ def exec_expr(expr, env):
             for argexpr in expr.argexprs:
                 args.append(exec_expr(argexpr, env))
             return builtin_printf(args)
+        elif func.name == "malloc":
+            args = []
+            for argexpr in expr.argexprs:
+                args.append(exec_expr(argexpr, env))
+            return builtin_malloc(args)
+        elif func.name == "free":
+            args = []
+            for argexpr in expr.argexprs:
+                args.append(exec_expr(argexpr, env))
+            return builtin_free(args)
         else:
             func_env = env.global_env()
             func_env.new_env()
@@ -399,6 +409,66 @@ def builtin_printf(args):
         warnings.warn("Trailing variadic arguments after executing built-in printf (%d arguments unused)" % (len(args) - arg_idx), RuntimeWarning)
 
     return VALUE(len(res), TInt())
+
+
+malloc_buffer = VARRAY("", TArr(TChar(), 1024))
+malloc_chunks = [-1024] + [0] * 1023
+
+
+def builtin_malloc(args):
+    assert len(args) == 1
+
+    if not isinstance(args[0].ctype, TInt) or args[0].value <= 0:
+        raise RuntimeError("Invalid argument given as size in built-in function malloc")
+
+    idx = 0
+    while idx < 1024:
+        size = malloc_chunks[idx]
+        if size < 0:
+            if args[0].value <= abs(size):
+                break
+        elif size == 0:
+            raise RuntimeError("Unexpected error in built-in function malloc")
+
+        idx += abs(size)
+
+    lsize = abs(size) - args[0].value
+    malloc_chunks[idx] = args[0].value
+    malloc_chunks[idx + args[0].value] = -lsize
+
+    return VPTR(malloc_buffer().subscr(idx))
+
+
+def builtin_free(args):
+    assert len(args) == 1
+
+    if not isinstance(args[0].ctype, VPTR) and \
+       not isinstance(args[0].deref(), VARRAY) or \
+       not isinstance(args[0].deref().get_value().ctype, TChar):
+       raise RuntimeError("Invalid argument given as ptr in built-in function free")
+
+    if args[0].ctype.deref().array is not malloc_buffer.array:
+       raise RuntimeError("Invalid argument given as ptr in built-in function free")
+
+    idx = args[0].ctype.deref().index
+    size = malloc_chunks[idx]
+    malloc_chunks[idx] = -size
+
+    idx = 0
+    prev_idx = -1
+    prev_size = 1
+    while idx < 1024:
+        size = malloc_chunks[idx]
+        if size < 0 and prev_size < 0:
+            malloc_chunks[prev_idx] = -(abs(size) + abs(prev_size))
+        elif size == 0:
+            raise RuntimeError("Unexpected error in built-in function free")
+
+        prev_idx = idx
+        prev_size = size
+        idx += abs(size)
+
+    return None
 
 
 def AST_INTERPRET(ast):
