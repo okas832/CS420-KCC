@@ -205,6 +205,12 @@ def AST_TYPE(ast):
 
             body_resolve(define.body, [genv, args_env], ret_type, True)
 
+    main_type_expect = TFunc(int, [])
+    if "main" not in genv:
+        raise SyntaxError("Entrypoint undefined (undefined reference to 'main')")
+    elif genv["main"] != TFunc:
+        raise TypeError("Entrypoint 'main' type invalid (expected %s, got %s)" % (main_type_expect, genv["main"]))
+
     return ast
 
 

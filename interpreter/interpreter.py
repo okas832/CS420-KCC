@@ -36,11 +36,11 @@ def define_func(fdef, env):
     env.add_var(fdef.name, ctype, value)
 
 
-def define_var(expr, env):
-    assert isinstance(expr, VDEF)
+def define_var(vdef, env):
+    assert isinstance(vdef, VDEF)
 
-    ctype = expr.type
-    for vdefid, assign in expr.pl:
+    ctype = vdef.type
+    for vdefid, assign in vdef.pl:
         val = exec_expr(assign, env) if assign is not None else None
         env.add_var(vdefid.name, ctype, val)
 
@@ -319,11 +319,24 @@ def builtin_printf(args):
     return None
 
 
+def AST_INTERPRET(ast):
+    assert isinstance(ast, GOAL)
+
+    env = ENV()
+
+    for define in ast.defs:
+        if isinstance(define, VDEF):
+            define_var(define, env)
+        else:  # isinstance(define, FDEF)
+            define_func(define, env)
+    
+    exec_stmt(env["main"].body, env)
+
 
 if __name__ == "__main__":
 
     env = ENV()
 
-    with open("input.c", "r") as f:
+    with open("../sample_input/gcd.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
-    exec_stmt(result, env)
+    AST_INTERPRET(result)
