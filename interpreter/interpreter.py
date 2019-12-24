@@ -6,6 +6,19 @@ from c_typecheck import AST_TYPE
 import warnings
 
 
+class VBREAK():
+    pass
+
+
+class VCONTINUE():
+    pass
+
+
+class VRETURN():
+    def __init__(self, value):
+        self.ret_val = value
+
+
 def lvalue_resolve(expr, env):
     assert isinstance(expr, ID) or isinstance(expr, DEREF) or (isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID))
     # TODO: int a[10]; int **b = &a; (*b)[0] = 1;
@@ -254,20 +267,31 @@ def exec_stmt(stmt, env, func_body=False):
         for defv in stmt.defvs:
             define_var(defv, env)
         for sub in stmt.stmts:
-            exec_stmt(sub, env)
+            ret = exec_stmt(sub, env)
+            if isinstance(ret, VCONTINUE) or isinstance(ret, VBREAK) or isinstance(ret, VRETURN):
+                env.del_env()
+                return ret
         env.del_env()
     elif isinstance(stmt, EMPTY_STMT):
         pass
     elif isinstance(stmt, WHILE):
         c = exec_expr(stmt.cond, env)
         while c.value:
-            exec_expr(stmt.body, env)
+            ret = exec_stmt(stmt.body, env)
+            if isinstance(ret, VBREAK):
+                break
+            elif isinstance(ret, VRETURN):
+                return ret
             c = exec_expr(stmt.cond, env)
     elif isinstance(stmt, FOR):
         exec_expr(stmt.init, env)
         c = exec_expr(stmt.cond, env)
         while c.value:
-            exec_stmt(stmt.body, env)
+            ret = exec_stmt(stmt.body, env)
+            if isinstance(ret, VBREAK):
+                break
+            elif isinstance(ret, VRETURN):
+                return ret
             exec_expr(stmt.update, env)
             c = exec_expr(stmt.cond, env)
     elif isinstance(stmt, IFELSE):
@@ -277,15 +301,16 @@ def exec_stmt(stmt, env, func_body=False):
         elif stmt.else_stmt is not None:
             exec_stmt(stmt.else_stmt, env)
     elif isinstance(stmt, CONTINUE):
-        pass
+        return VCONTINUE()
     elif isinstance(stmt, BREAK):
-        pass
+        return VBREAK()
     elif isinstance(stmt, RETURN):
         if stmt.expr is not None:
-            return exec_expr(stmt.expr, env)
-        return None
+            return VRETURN(exec_expr(stmt.expr, env))
+        return VRETURN(None)
     else:
         exec_expr(stmt, env)
+    return None
 
 
 def builtin_printf(args):
@@ -329,11 +354,11 @@ def builtin_printf(args):
             res += fmt[i]
             i += 1
 
-    print(res, end='')
+    # print(res, end='')
 
     if arg_idx != len(args):
         warnings.warn("Trailing variadic arguments after executing built-in printf (%d arguments unused)" % (len(args) - arg_idx), RuntimeWarning)
-    
+
     return None
 
 
@@ -348,14 +373,11 @@ def AST_INTERPRET(ast):
         else:  # isinstance(define, FDEF)
             define_func(define, env)
         print(env.envs)
-    
+
     exec_stmt(env.id_resolve("main").body, env)
 
 
 if __name__ == "__main__":
-
-    env = ENV()
-
     with open("../sample_input/gcd.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     AST_INTERPRET(result)
