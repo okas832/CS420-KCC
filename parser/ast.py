@@ -183,6 +183,7 @@ class VDEFID(AST):
         self.name = name
         self.ptr_cnt = ptr_cnt
         self.array_sz = array_sz
+        self.var_type = None  # type annotated added by VDEF_RESOLVE
 
     def __repr__(self):
         return 'VDEFID("%s", %d, %s)' % (self.name, self.ptr_cnt, self.array_sz)

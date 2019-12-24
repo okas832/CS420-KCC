@@ -116,7 +116,7 @@ def VDEF_resolve(vdef, env, target_env, is_const=False):
 
         if vdefid.name in target_env:
             raise SyntaxError("redefinition of '%s'" % vdefid.name)
-        target_env[vdefid.name] = var_type
+        vdefid.type = target_env[vdefid.name] = var_type
 
 
 def STMT_resolve(stmt, env, ret_type, inside_loop=False):
