@@ -3,7 +3,7 @@
 ## TODO
 - [x] Define nodes for AST
 - [x] Implement yacc for function body
-- [ ] Add line number to every AST nodes
+- [x] Add line number to every AST nodes
 - [x] Fix if-then vs. if-then-else shift/reduce conflict (PLY currently resolves to shift, which is correct)
 - [x] Implement implicit type conversion
 - [x] Implement simple type checks
