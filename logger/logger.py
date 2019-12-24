@@ -12,16 +12,26 @@ class History(list):
         table = HistoryTable(scope, addr)
         self.append(table)
 
-    # extremely hard case
-    # break in the simple struct or sudden return of the function in the deep struct
-    # executor에서 넘겨주는거 봐서 수정필요 할듯 얼마나 del 해야 하는지
     # scope : function, loop, block
     # normal execution : del once
     # continue -> del before loop (not del loop)
     # break -> del until loop (del loop)
     # return -> del until function
-    def del_table(self):
+    def del_table(self, by):
         self.pop()
+        if by == "normal":
+            pass
+        elif by == "continue":
+            while self[-1].scope != "loop":
+                self.pop()
+        elif by == "break":
+            while self[-1].scope != "loop":
+                self.pop()
+            self.pop()
+        elif by == "return":
+            while self[-1].scope != "function":
+                self.pop()
+            self.pop()
 
 
 # One HistoryTable for the each scope (construct)
@@ -68,14 +78,25 @@ class HistoryTable:
             self.body.append(entry)
 
     # add new history to the corresponding variable
-    # Array인 경우 추가 수정 필요
-    def var_change(self, var, ctype, line, value):
-        temp = (line, value)
-        index = self.var_find_name(var)
+    def var_change(self, var, line, value):
+        check_arr = var.find("[")
+        if check_arr != -1:
+            idx = int(var[check_arr + 1])
+            name = var.split("[")[0]
+        else:
+            name = var
+
+        index = self.var_find_name(name)
 
         if index == "no":
             return "no"
         else:
+            if check_arr != -1:
+                arr = self.body[index][2][-1][1][:]
+                arr[idx] = value
+                temp = (line, arr)
+            else:
+                temp = (line, value)
             self.body[index][2].append(temp)
 
 
@@ -90,7 +111,6 @@ def command(cli, args):
     if check_arr != -1:
         idx = int(args[check_arr + 1])
         var = args.split("[")[0]
-        check_arr = 1
     else:
         var = args
 
@@ -114,7 +134,7 @@ def command(cli, args):
                             print(temp[-1][1])
                     elif comm == "trace":
                         for j in range(len(temp)):
-                            if check_arr == 1:
+                            if check_arr != -1:
                                 print(var + " = " + str(temp[j][1]) + " at line " + str(temp[j][0][idx]))
                             else:
                                 print(var + " = " + str(temp[j][1]) + " at line " + str(temp[j][0]))
@@ -132,6 +152,7 @@ def command(cli, args):
                         print(var + " = " + str(temp[j][1]) + " at line " + str(temp[j][0][idx]))
                     else:
                         print(var + " = " + str(temp[j][1]) + " at line " + str(temp[j][0]))
+                        print("address : " + str(hex(history_main[t].body[index][0])))
             break
 
 
@@ -147,17 +168,16 @@ def declare(var, ctype, line, scope="main", value="N/A"):
 # When there is change of variable value (actually assign), add new history to the variable
 # automatically find its scope from bottom to the top
 # there is no check for the this value is right or not (executor handle it)
-def change(var, ctype, line, value):
+def change(var, line, value):
     t = -1
     while True:
-        done = history_main[t].var_change(var, ctype, line, value)
+        done = history_main[t].var_change(var, line, value)
         if done == "no":
             if history_main[t].scope != "function":
                 t = t - 1
                 continue
             else:
-                done = history_global[0].var_change(var, ctype,  line, value)
-                # executor이미 error 잡아 줄것 같은데 일단 냅둠
+                done = history_global[0].var_change(var, line, value)
                 if done == "no":
                     print("Invisible variable")
                     break
@@ -172,9 +192,11 @@ def new_scope(scope):
 
 
 # del latest HistoryTable to the main History
-def end_scope():
-    history_main.del_table()
+def end_scope(by="normal"):
+    history_main.del_table(by)
 
+# start address of memory
+# they are just chosen for showing some static value (far from real world)
 addr_global = 0x7dfb14e00000
 addr_main = 0x7efb14e00000
 
