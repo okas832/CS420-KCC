@@ -28,6 +28,11 @@ class ENV():
                 return env[name]
         raise SyntaxError("'%s' undeclared (first use in this function)" % expr.name)
 
+    def global_env(self):
+        env = ENV()
+        env.envs.append(self.envs[0])
+        return env
+
 
 class VALUE():
     def __init__(self, value, ctype):
