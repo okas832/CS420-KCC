@@ -1,6 +1,7 @@
 from ast import *
 from ctype import *
 from environ import *
+import warnings
 
 
 def lvalue_resolve(expr, env):
@@ -42,11 +43,11 @@ def define_func(fdef, env):
     env.add_var(fdef.name, ctype, value)
 
 
-def define_var(expr, env):
-    assert isinstance(expr, VDEF)
+def define_var(vdef, env):
+    assert isinstance(vdef, VDEF)
 
-    ctype = expr.type
-    for vdefid, assign in expr.pl:
+    ctype = vdef.type
+    for vdefid, assign in vdef.pl:
         val = exec_expr(assign, env) if assign is not None else None
         env.add_var(vdefid.name, ctype, val)
 
@@ -211,15 +212,17 @@ def exec_expr(expr, env):
         func = exec_expr(expr.funcexpr, env)
         assert isinstance(func, VFUNC)
         if func.name == "printf":
-            pass  # run built-in function printf
+            args = []
+            for argexpr in expr.argexprs:
+                args.append(exec_expr(argexpr, env))
+            return builtin_printf(args)
         else:
             func_env = env.global_env()
             func_env.new_env()
-            for argexpr, argname, argtype in zip(func_env.argexprs, func.arg_names, func.ctype.arg_types):
+            for argexpr, argname, argtype in zip(expr.argexprs, func.arg_names, func.ctype.arg_types):
                 arg = exec_expr(argexpr, env)
                 func_env.add_var(argname, argtype, arg)
-            exec_stmt(func.body, func_env, True)
-        pass
+            return exec_stmt(func.body, func_env, True)
     elif isinstance(expr, POSTOP):
         return exec_postop(expr, env)
     elif isinstance(expr, ADDR):
@@ -284,11 +287,72 @@ def exec_stmt(stmt, env, func_body=False):
         exec_expr(stmt, env)
 
 
+def builtin_printf(args):
+    assert len(args) >= 1
+    if not isinstance(args[0], VPTR) or \
+       not isinstance(args[0].deref(), VARRAY) or \
+       not isinstance(args[0].deref().get_value().ctype, TChar):
+       raise RuntimeError("Invalid argument given as format string in built-in function printf")
+    
+    # built format string from arg
+    fmt = ""
+    for i in range(args[0].index, len(args[0].array)):
+        c = chr(args[0].array[i].get_value().value & 0xFF)
+        if c == '\0':
+            break
+        fmt += c
+    else:
+        raise RuntimeError("Format string with no NULL terminator in built-in printf")
+    
+    res = ""
+    i, arg_idx = 0, 1
+    while i < len(fmt):
+        if fmt[i:i+2] == r"%d":
+            if arg_idx >= len(args):
+                raise RuntimeError("Insufficient variadic arguments while executing built-in printf")
+            elif not isinstance(args[arg_idx], int):
+                raise RuntimeError("Invalid argument type while executing built-in printf (expected int/char, got %s)" % type(args[arg_idx]))
+            res += str(args[arg_idx])
+            i += 2
+            arg_idx += 1
+        elif fmt[i:i+2] == r"%f":
+            if arg_idx >= len(args):
+                raise RuntimeError("Insufficient variadic arguments while executing built-in printf")
+            elif not isinstance(args[arg_idx], float):
+                raise RuntimeError("Invalid argument type while executing built-in printf (expected float, got %s)" % type(args[arg_idx]))
+            res += str(args[arg_idx])
+            i += 2
+            arg_idx += 1
+        else:
+            res += fmt[i]
+            i += 1
+
+    print(res, end='')
+
+    if arg_idx != len(args):
+        warnings.warn("Trailing variadic arguments after executing built-in printf (%d arguments unused)" % (len(args) - arg_idx), RuntimeWarning)
+    
+    return None
+
+
+def AST_INTERPRET(ast):
+    assert isinstance(ast, GOAL)
+
+    env = ENV()
+
+    for define in ast.defs:
+        if isinstance(define, VDEF):
+            define_var(define, env)
+        else:  # isinstance(define, FDEF)
+            define_func(define, env)
+    
+    exec_stmt(env["main"].body, env)
+
 
 if __name__ == "__main__":
 
     env = ENV()
 
-    with open("input.c", "r") as f:
+    with open("../sample_input/gcd.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
-    exec_stmt(result, env)
+    AST_INTERPRET(result)
