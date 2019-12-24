@@ -25,11 +25,11 @@
 >> next
 	Start...
 >> next 1000
-	Average : 0
-	Average : 0.5
-	Average : 1
-	Average : 1.5
-	Average : 2
+	Average : 0.000000
+	Average : 0.500000
+	Average : 1.000000
+	Average : 1.500000
+	Average : 2.000000
 	*** total exceeds 3!***
 	End of program
 >> trace i
