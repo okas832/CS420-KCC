@@ -98,6 +98,7 @@ class EMPTY_STMT(STMT):
 class EXPR_MANY(STMT, EXPR):
     def __init__(self, exprs):
         self.exprs = exprs
+        self.lineno = Ln((self.exprs[0].lineno.start, self.exprs[-1].lineno.end))
 
     def __add__(self, rhs):
         if not isinstance(rhs, EXPR):
