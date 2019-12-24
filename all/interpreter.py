@@ -418,8 +418,10 @@ malloc_chunks = [-1024] + [0] * 1023
 def builtin_malloc(args):
     assert len(args) == 1
 
-    if not isinstance(args[0].ctype, TInt) or args[0].value <= 0:
-        raise RuntimeError("Invalid argument given as size in built-in function malloc")
+    if not isinstance(args[0].ctype, TInt):
+        raise RuntimeError("size_t should be a positive integer")
+    if args[0].value < 1:
+        raise RuntimeError("size_t should be a positive integer")
 
     idx = 0
     while idx < 1024:
@@ -428,15 +430,19 @@ def builtin_malloc(args):
             if args[0].value <= abs(size):
                 break
         elif size == 0:
+            print(malloc_chunks)
             raise RuntimeError("Unexpected error in built-in function malloc")
 
         idx += abs(size)
+
+    if idx == 1024:
+        raise RuntimeError("Out of memory")
 
     lsize = abs(size) - args[0].value
     malloc_chunks[idx] = args[0].value
     malloc_chunks[idx + args[0].value] = -lsize
 
-    return VPTR(malloc_buffer().subscr(idx))
+    return VPTR(malloc_buffer.subscr(idx))
 
 
 def builtin_free(args):
@@ -445,12 +451,15 @@ def builtin_free(args):
     if not isinstance(args[0].ctype, VPTR) and \
        not isinstance(args[0].deref(), VARRAY) or \
        not isinstance(args[0].deref().get_value().ctype, TChar):
-       raise RuntimeError("Invalid argument given as ptr in built-in function free")
+       raise RuntimeError("not allocated address")
 
-    if args[0].ctype.deref().array is not malloc_buffer.array:
-       raise RuntimeError("Invalid argument given as ptr in built-in function free")
+    if args[0].deref().array is not malloc_buffer.array:
+       raise RuntimeError("not allocated address")
 
-    idx = args[0].ctype.deref().index
+    idx = args[0].deref().index
+    if idx < 0 or idx >= 1024 or malloc_chunks[idx] == 0:
+       raise RuntimeError("not allocated address")
+
     size = malloc_chunks[idx]
     malloc_chunks[idx] = -size
 
@@ -461,6 +470,11 @@ def builtin_free(args):
         size = malloc_chunks[idx]
         if size < 0 and prev_size < 0:
             malloc_chunks[prev_idx] = -(abs(size) + abs(prev_size))
+            malloc_chunks[idx] = 0
+            prev_size = malloc_chunks[prev_idx]
+            idx = prev_idx + abs(malloc_chunks[prev_idx])
+            print("Defragmentation operated")
+            continue
         elif size == 0:
             raise RuntimeError("Unexpected error in built-in function free")
 
@@ -487,6 +501,6 @@ def AST_INTERPRET(ast):
 
 
 if __name__ == "__main__":
-    with open("../sample_input/pointer_op.c", "r") as f:
+    with open("../sample_input/mergesort.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     AST_INTERPRET(result)

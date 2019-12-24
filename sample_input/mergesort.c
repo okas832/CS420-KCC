@@ -8,7 +8,7 @@ void merge(char *arr, int l, int m, int r)
     int n2 =  r - m;
 
     /* create temp arrays */
-    char *L, *R;
+    char *L = malloc(n1), *R = malloc(n2);
 
     /* Copy data to temp arrays L[] and R[] */
     for (i = 0; i < n1; i++)
@@ -52,6 +52,9 @@ void merge(char *arr, int l, int m, int r)
         j++;
         k++;
     }
+
+    free(L);
+    free(R);
 }
 
 /* l is for left index and r is right index of the
