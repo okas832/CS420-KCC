@@ -199,6 +199,8 @@ def AST_TYPE(ast):
 
             if define.name.name in genv:
                 raise SyntaxError("redefinition of '%s'" % define.name.name)
+            elif define.name.name == "printf":
+                raise SyntaxError("redefinition of built-in function '%s'" % define.name.name)
             define.func_type = genv[define.name.name] = TFunc(ret_type, arg_types)
 
             body_resolve(define.body, [genv, args_env], ret_type, True)

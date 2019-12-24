@@ -185,6 +185,17 @@ def exec_expr(expr, env):
         assert isinstance(arr, list)
         return arr[idx].get_value()
     elif isinstance(expr, CALL):
+        func = exec_expr(expr.funcexpr, env)
+        assert isinstance(func, VFUNC)
+        if func.name == "printf":
+            pass  # run built-in function printf
+        else:
+            func_env = env.global_env()
+            func_env.new_env()
+            for argexpr, argname, argtype in zip(func_env.argexprs, func.arg_names, func.ctype.arg_types):
+                arg = exec_expr(argexpr, env)
+                func_env.add_var(argname, argtype, arg)
+            exec_stmt(func.body, func_env, True)
         pass
     elif isinstance(expr, POSTOP):
         # TODO: should handle ++, --
@@ -213,9 +224,10 @@ def exec_expr(expr, env):
     raise ValueError("invalid expression '%s'" % expr)
 
 
-def exec_stmt(stmt, env):
+def exec_stmt(stmt, env, func_body=False):
     if isinstance(stmt, BODY):
-        env.new_env()
+        if not func_body:
+            env.new_env()
         for defv in stmt.defvs:
             define_var(defv, env)
         for sub in stmt.stmts:
