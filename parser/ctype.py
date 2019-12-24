@@ -193,11 +193,11 @@ def cast_binop(expr_lhs, expr_rhs, op):
     if isinstance(expr_rhs_.type, TArr):
         expr_rhs_ = cast(expr_rhs_, TPtr(expr_rhs_.type.elem_type))
     if isinstance(expr_lhs_.type, TPtr):
-        if op == "-" and isinstance(expr_rhs_.type, TPtr):
+        if op in ["-", "<", ">", "<=", ">=", "==", "!="] and isinstance(expr_rhs_.type, TPtr):
             if expr_lhs_.type != expr_rhs_.type:
                 raise TypeError("invalid operands to binary operation '%s': %s, %s" % (op, expr_lhs.type, expr_rhs.type))
             return (expr_lhs_, expr_rhs_, TInt())
-        elif op == "+" and isinstance(expr_rhs_.type, TInt):
+        elif op in ["+", "-"] and isinstance(expr_rhs_.type, TInt):
             return (expr_lhs_, expr_rhs_, expr_lhs_.type)
         # else, just pass through to next code for error handing
 
