@@ -412,8 +412,7 @@ def AST_INTERPRET(ast):
         else:  # isinstance(define, FDEF)
             define_func(define, env)
 
-    call_main = CALL(ID("main"), [])
-    exec_expr(call_main, env)
+    exec_expr(CALL(ID("main", (-1, -1)), [], (-1, -1)), env)
 
 
 if __name__ == "__main__":

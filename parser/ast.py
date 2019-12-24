@@ -182,7 +182,7 @@ class RETURN(STMT):
         self.expr = expr
 
     def __repr__(self):
-        return '%s:RETURN(%s)@%d' % (self.lineno, self.expr)
+        return '%s:RETURN(%s)' % (self.lineno, self.expr)
 
 
 # Varible DEFinition ID (id_adv [+ array])
