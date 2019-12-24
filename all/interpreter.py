@@ -168,6 +168,12 @@ def exec_binop(expr, env):
                 lhs.deref_var.array is rhs.deref_var.array and expr.op in ["-", "<", ">", "<=", ">=", "==", "!="]:
                 lhs = VALUE(lhs.deref_var.index, TInt())
                 rhs = VALUE(rhs.deref_var.index, TInt())
+            elif isinstance(lhs.deref_var, VAR) and isinstance(rhs.deref_var, VAR) and \
+                expr.op == "==":
+                return VALUE(lhs.deref_var is rhs.deref_var, TInt())
+            elif isinstance(lhs.deref_var, VAR) and isinstance(rhs.deref_var, VAR) and \
+                expr.op == "!=":
+                return VALUE(lhs.deref_var is not rhs.deref_var, TInt())
             else:
                 raise RuntimeError("Invalid binary operation against pointer types")
         elif isinstance(rhs, VALUE) and (isinstance(rhs.ctype, TInt) or isinstance(rhs.ctype, TChar)) and expr.op == "+":
@@ -205,16 +211,22 @@ def exec_binop(expr, env):
         result = lhs.value >> rhs.value
     elif expr.op == "==":
         result = lhs.value == rhs.value
+        ctype = TInt()
     elif expr.op == "!=":
         result = lhs.value != rhs.value
+        ctype = TInt()
     elif expr.op == "<":
         result = lhs.value < rhs.value
+        ctype = TInt()
     elif expr.op == ">":
         result = lhs.value > rhs.value
+        ctype = TInt()
     elif expr.op == "<=":
         result = lhs.value <= rhs.value
+        ctype = TInt()
     elif expr.op == ">=":
         result = lhs.value >= rhs.value
+        ctype = TInt()
 
     else:
         raise ValueError("Not Implemented Operator '%s'" % expr.op)

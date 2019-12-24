@@ -13,7 +13,7 @@ class Interface:
         self.linecurr = -1   # previously blocked here
         self.linerem = 0     # remaining lines to exec
         self.is_running = False
-    
+
     def loadfile(self):
         try:
             self.file = open(self.filename, "r").read()

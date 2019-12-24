@@ -48,8 +48,8 @@ class VAR():
     def __init__(self, name, ctype, value, lineno, scope="main"):
         self.name = name
         self.ctype = ctype
-        self.value = value
-        self.history = [(lineno, value)]
+        self.value = VALUE(0, ctype) if scope == "global" and value is None else value
+        self.history = [(lineno, self.value)]
         declare(name, self, scope)
 
     def set_value(self, value, lineno):
