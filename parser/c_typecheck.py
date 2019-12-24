@@ -24,6 +24,7 @@ def type_resolve(expr, env, is_const=False):
         idx_type = type_resolve(expr.idxexpr, env)
         if type(idx_type) not in [TChar, TInt]:
             raise TypeError("array subscript is not an integer")
+        expr.idxexpr = cast(expr.idxexpr, TInt())
         if type(arr_type) is TPtr:
             expr.type = arr_type.deref_type
         else:
