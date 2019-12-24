@@ -39,6 +39,22 @@ def type_resolve(expr, env, is_const=False):
             for argexpr in expr.argexprs[1:]:
                 arg_type = type_resolve(argexpr, env)
             expr.type = TInt()
+        elif isinstance(expr.funcexpr, ID) and expr.funcexpr.name == "malloc":
+            if len(expr.argexprs) < 1:
+                raise SyntaxError("too few arguments to function")
+            elif len(expr.argexprs) > 1:
+                raise SyntaxError("too many arguments to function")
+            type_resolve(expr.argexprs[0], env)
+            expr.argexprs[0] = cast(expr.argexprs[0], TInt())
+            expr.type = TPtr(TChar())
+        elif isinstance(expr.funcexpr, ID) and expr.funcexpr.name == "free":
+            if len(expr.argexprs) < 1:
+                raise SyntaxError("too few arguments to function")
+            elif len(expr.argexprs) > 1:
+                raise SyntaxError("too many arguments to function")
+            type_resolve(expr.argexprs[0], env)
+            expr.argexprs[0] = cast(expr.argexprs[0], TPtr(TChar()))
+            expr.type = TVoid()
         else:
             func_type = type_resolve(expr.funcexpr, env)
             if not isinstance(func_type, TFunc):
@@ -200,12 +216,12 @@ def AST_TYPE(ast):
 
             if define.name.name in genv:
                 raise SyntaxError("redefinition of '%s'" % define.name.name)
-            elif define.name.name == "printf":
+            elif define.name.name in ["printf", "malloc", "free"]:
                 raise SyntaxError("redefinition of built-in function '%s'" % define.name.name)
             define.func_type = genv[define.name.name] = TFunc(ret_type, arg_types)
 
             fdef_deferred.append((define.body, args_env, ret_type))
-    
+
     for body, args_env, ret in fdef_deferred:
         body_resolve(body, [genv, args_env], ret, True)
 

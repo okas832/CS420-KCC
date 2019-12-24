@@ -1,8 +1,9 @@
 from ast import *
+from c_typecheck import AST_TYPE
+from c_yacc import AST_YACC
 from ctype import *
 from environ import *
-from c_yacc import AST_YACC
-from c_typecheck import AST_TYPE
+import logger
 import warnings
 
 
@@ -55,15 +56,18 @@ def define_func(fdef, env):
     ctype = fdef.func_type
     arg_names = [arg[1].name for arg in fdef.arg]
     value = VFUNC(fdef.name.name, ctype, arg_names, fdef.body)
-    env.add_var(fdef.name.name, ctype, value)
+    env.add_var(fdef.name.name, ctype, value, fdef.lineno.start)
 
 
 def define_var(vdef, env):
     assert isinstance(vdef, VDEF)
 
     for vdefid, assign in vdef.pl:
+        if assign is None:
+            env.interface.check(vdefid.lineno.end)
         val = exec_expr(assign, env) if assign is not None else None
-        env.add_var(vdefid.name, vdefid.var_type, val)
+        lineno = assign.lineno.end if assign is not None else vdefid.lineno.end
+        env.add_var(vdefid.name, vdefid.var_type, val, lineno)
 
 
 def exec_cast(expr, env):
@@ -95,14 +99,14 @@ def exec_preop(expr, env):
 
         if expr.op == "++":
             if isinstance(val, VPTR) and isinstance(val.deref(), VARRAY):
-                var.set_value(VPTR(val.deref().subscr(1)))
+                var.set_value(VPTR(val.deref().subscr(1)), expr.lineno.end)
             else:
-                var.set_value(VALUE(val.value + 1, val.ctype))
+                var.set_value(VALUE(val.value + 1, val.ctype), expr.lineno.end)
         else:
             if isinstance(val, VPTR) and isinstance(val.deref(), VARRAY):
-                var.set_value(VPTR(val.deref().subscr(-1)))
+                var.set_value(VPTR(val.deref().subscr(-1)), expr.lineno.end)
             else:
-                var.set_value(VALUE(val.value - 1, val.ctype))
+                var.set_value(VALUE(val.value - 1, val.ctype), expr.lineno.end)
         return var.get_value()
 
     val = exec_expr(expr.expr, env)
@@ -125,20 +129,34 @@ def exec_postop(expr, env):
     val = var.get_value()
     if expr.op == "++":
         if isinstance(val, VPTR) and isinstance(val.deref(), VARRAY):
-            var.set_value(VPTR(val.deref().subscr(1)))
+            var.set_value(VPTR(val.deref().subscr(1)), expr.lineno.end)
         else:
-            var.set_value(VALUE(val.value + 1, val.ctype))
+            var.set_value(VALUE(val.value + 1, val.ctype), expr.lineno.end)
     else:
         if isinstance(val, VPTR) and isinstance(val.deref(), VARRAY):
-            var.set_value(VPTR(val.deref().subscr(-1)))
+            var.set_value(VPTR(val.deref().subscr(-1)), expr.lineno.end)
         else:
-            var.set_value(VALUE(val.value - 1, val.ctype))
+            var.set_value(VALUE(val.value - 1, val.ctype), expr.lineno.end)
 
     return val
 
 
 def exec_binop(expr, env):
     assert isinstance(expr, BINOP)
+
+    if expr.op in ["&&", "||"]:
+        lhs = exec_expr(expr.lhs, env)
+        if lhs.value and expr.op == "||":
+            result = True
+        elif not lhs.value and expr.op == "&&":
+            result = False
+        else:
+            rhs = exec_expr(expr.rhs, env)
+            if expr.op == "&&":
+                result = lhs.value and rhs.value
+            else:   # expr.op == "||"
+                result = lhs.value or rhs.value
+        return VALUE(result, TInt())
 
     lhs = exec_expr(expr.lhs, env)
     rhs = exec_expr(expr.rhs, env)
@@ -185,10 +203,6 @@ def exec_binop(expr, env):
         result = lhs.value << rhs.value
     elif expr.op == ">>":
         result = lhs.value >> rhs.value
-    elif expr.op == "&&":
-        result = bool(lhs.value) and bool(rhs.value)
-    elif expr.op == "||":
-        result = bool(lhs.value) or bool(rhs.value)
     elif expr.op == "==":
         result = lhs.value == rhs.value
     elif expr.op == "!=":
@@ -213,31 +227,35 @@ def exec_assign(expr, env):
 
     rhs = exec_expr(expr.rhs, env)
     lhs = lvalue_resolve(expr.lhs, env)
-    return lhs.set_value(rhs)
+    return lhs.set_value(rhs, expr.lineno.end)
 
 
 def exec_expr(expr, env):
+    env.interface.check(expr.lineno.start)
+
     if isinstance(expr, IVAL):
-        return VALUE(expr.val, TInt())
+        ret = VALUE(expr.val, TInt())
     elif isinstance(expr, FVAL):
-        return VALUE(expr.val, TFloat())
+        ret = VALUE(expr.val, TFloat())
     elif isinstance(expr, SVAL):
         string = expr.val[1:-1].encode('utf-8').decode('unicode_escape')
-        arr = VARRAY("", TArr(TChar(), len(string) + 1))
+        arr = VARRAY("", TArr(TChar(), len(string) + 1), expr.lineno.end, "global")
         for i, s in enumerate(string):
-            arr.array[i].set_value(VALUE(ord(s), TChar()))
-        arr.array[-1].set_value(VALUE(0, TChar()))
-        return VPTR(arr)
+            arr.array[i].set_value(VALUE(ord(s), TChar()), expr.lineno.end)
+        arr.array[-1].set_value(VALUE(0, TChar()), expr.lineno.end)
+        ret = VPTR(arr)
     elif isinstance(expr, CVAL):
+        env.interface.check(expr.lineno.end)
         char = expr.val[1:-1].encode('utf-8').decode('unicode_escape')
-        return VALUE(ord(char), TChar())
+        ret = VALUE(ord(char), TChar())
     elif isinstance(expr, TEXPR):
-        return exec_cast(expr, env)
+        ret = exec_cast(expr, env)
     elif isinstance(expr, ID):
         var = env.id_resolve(expr.name)
         if isinstance(var, VAR):
-            return var.get_value()
-        return var
+            ret = var.get_value()
+        else:
+            ret = var
     elif isinstance(expr, SUBSCR):
         arr = exec_expr(expr.arrexpr, env)
         idx = exec_expr(expr.idxexpr, env)
@@ -246,11 +264,11 @@ def exec_expr(expr, env):
             raise TypeError("Cannot array subscript")
 
         if isinstance(arr.deref(), VARRAY):
-            return arr.deref().subscr(idx.value).get_value()
+            ret = arr.deref().subscr(idx.value).get_value()
         elif idx.value == 0:
-            return arr.deref().get_value()
-
-        raise TypeError("Cannot array subscript")
+            ret = arr.deref().get_value()
+        else:
+            raise TypeError("Cannot array subscript")
     elif isinstance(expr, CALL):
         func = exec_expr(expr.funcexpr, env)
         assert isinstance(func, VFUNC)
@@ -258,41 +276,51 @@ def exec_expr(expr, env):
             args = []
             for argexpr in expr.argexprs:
                 args.append(exec_expr(argexpr, env))
-            return builtin_printf(args)
+            env.interface.check(expr.lineno.end)  # wait for RPAREN
+            ret = builtin_printf(args)
         elif func.name == "malloc":
             args = []
             for argexpr in expr.argexprs:
                 args.append(exec_expr(argexpr, env))
-            return builtin_malloc(args)
+            env.interface.check(expr.lineno.end)  # wait for RPAREN
+            ret = builtin_malloc(args)
         elif func.name == "free":
             args = []
             for argexpr in expr.argexprs:
                 args.append(exec_expr(argexpr, env))
-            return builtin_free(args)
+            env.interface.check(expr.lineno.end)  # wait for RPAREN
+            ret = builtin_free(args)
         else:
+            logger.new_scope("function")
             func_env = env.global_env()
             func_env.new_env()
             for argexpr, argname, argtype in zip(expr.argexprs, func.arg_names, func.ctype.arg_types):
                 arg = exec_expr(argexpr, env)
-                func_env.add_var(argname, argtype, arg)
-            ret = exec_stmt(func.body, func_env, True)
-            if isinstance(ret, VRETURN) and ret.ret_val is not None and func.ctype.ret_type != TVoid():
-                return ret.ret_val
-            elif (ret is None or (isinstance(ret, VRETURN) and ret.ret_val is None)) and \
+                func_env.add_var(argname, argtype, arg, func.body.lineno.start)
+            env.interface.check(expr.lineno.end)  # wait for RPAREN
+            env.interface.check(func.body.lineno.start, jump=True)
+            call_ret = exec_stmt(func.body, func_env, True)
+            env.interface.check(expr.lineno.end, skip=True)  # skip previous return/RPAREN, incr later
+            if isinstance(call_ret, VRETURN) and call_ret.ret_val is not None and func.ctype.ret_type != TVoid():
+                logger.end_scope()
+                return call_ret.ret_val
+            elif (call_ret is None or (isinstance(call_ret, VRETURN) and call_ret.ret_val is None)) and \
                 func.ctype.ret_type == TVoid():
+                logger.end_scope()
                 return None
             else:
-                assert ret is None or (isinstance(ret, VRETURN) and ret.ret_val is None)
+                assert call_ret is None or (isinstance(call_ret, VRETURN) and call_ret.ret_val is None)
                 raise RuntimeError("Missing return (expected '%s')" % func.ctype.ret_type)
     elif isinstance(expr, POSTOP):
-        return exec_postop(expr, env)
+        ret = exec_postop(expr, env)
     elif isinstance(expr, ADDR):
-        return VPTR(lvalue_resolve(expr.expr, env))
+        ret = VPTR(lvalue_resolve(expr.expr, env))
     elif isinstance(expr, DEREF):
         val = exec_expr(expr.expr, env)
         if isinstance(val, VPTR):
-            return val.deref().get_value()
-        raise ValueError("Cannot dereference '%s'" % val)
+            ret = val.deref().get_value()
+        else:
+            raise ValueError("Cannot dereference '%s'" % val)
     elif isinstance(expr, PREOP):
         return exec_preop(expr, env)
     elif isinstance(expr, BINOP):
@@ -303,12 +331,18 @@ def exec_expr(expr, env):
         for e in expr.exprs:
             val = exec_expr(e, env)
         return val
+    else:
+        raise ValueError("invalid expression '%s'" % expr)
 
-    raise ValueError("invalid expression '%s'" % expr)
+    env.interface.check(expr.lineno.end)
+    return ret
 
 
 def exec_stmt(stmt, env, func_body=False):
+    env.interface.check(stmt.lineno.start)
+
     if isinstance(stmt, BODY):
+        logger.new_scope("block")
         if not func_body:
             env.new_env()
         for defv in stmt.defvs:
@@ -316,41 +350,60 @@ def exec_stmt(stmt, env, func_body=False):
         for sub in stmt.stmts:
             ret = exec_stmt(sub, env)
             if isinstance(ret, VCONTINUE) or isinstance(ret, VBREAK) or isinstance(ret, VRETURN):
+                logger.end_scope()
                 env.del_env()
                 return ret
+        logger.end_scope()
         env.del_env()
     elif isinstance(stmt, EMPTY_STMT):
         pass
     elif isinstance(stmt, WHILE):
         c = exec_expr(stmt.cond, env)
         while c.value:
+            env.interface.check(stmt.body.lineno.start, jump=True)
             ret = exec_stmt(stmt.body, env)
             if isinstance(ret, VBREAK):
+                env.interface.check(stmt.body.lineno.end, skip=True)
                 break
+            elif isinstance(ret, VCONTINUE):
+                env.interface.check(stmt.cond.lineno.start, jump=True)
             elif isinstance(ret, VRETURN):
                 return ret
+            env.interface.check(stmt.cond.lineno.start, jump=True)
             c = exec_expr(stmt.cond, env)
+        env.interface.check(stmt.body.lineno.end, skip=True)
     elif isinstance(stmt, FOR):
         exec_expr(stmt.init, env)
         c = exec_expr(stmt.cond, env)
         while c.value:
+            env.interface.check(stmt.body.lineno.start, jump=True)
             ret = exec_stmt(stmt.body, env)
             if isinstance(ret, VBREAK):
+                env.interface.check(stmt.body.lineno.end, skip=True)
                 break
+            elif isinstance(ret, VCONTINUE):
+                env.interface.check(stmt.update.lineno.start, jump=True)
             elif isinstance(ret, VRETURN):
                 return ret
+            env.interface.check(stmt.update.lineno.start, jump=True)
             exec_expr(stmt.update, env)
+            env.interface.check(stmt.cond.lineno.start, jump=True)
             c = exec_expr(stmt.cond, env)
+        env.interface.check(stmt.body.lineno.end, skip=True)
     elif isinstance(stmt, IFELSE):
         c = exec_expr(stmt.cond, env)
         if c.value:
+            env.interface.check(stmt.if_stmt.lineno.start, jump=True)
             ret = exec_stmt(stmt.if_stmt, env)
             if isinstance(ret, VBREAK) or isinstance(ret, VCONTINUE) or isinstance(ret, VRETURN):
                 return ret
         elif stmt.else_stmt is not None:
+            env.interface.check(stmt.else_stmt.lineno.start, jump=True)
             ret = exec_stmt(stmt.else_stmt, env)
             if isinstance(ret, VBREAK) or isinstance(ret, VCONTINUE) or isinstance(ret, VRETURN):
                 return ret
+        env.interface.check(stmt.lineno.end, skip=True)
+
     elif isinstance(stmt, CONTINUE):
         return VCONTINUE()
     elif isinstance(stmt, BREAK):
@@ -361,6 +414,9 @@ def exec_stmt(stmt, env, func_body=False):
         return VRETURN(None)
     else:
         exec_expr(stmt, env)
+
+    env.interface.check(stmt.lineno.end)
+
     return None
 
 
@@ -413,7 +469,7 @@ def builtin_printf(args):
     return VALUE(len(res), TInt())
 
 
-malloc_buffer = VARRAY("", TArr(TChar(), 1024))
+malloc_buffer = VARRAY("", TArr(TChar(), 1024), -1, scope="global")
 malloc_chunks = [-1024] + [0] * 1023
 
 
@@ -432,7 +488,6 @@ def builtin_malloc(args):
             if args[0].value <= abs(size):
                 break
         elif size == 0:
-            print(malloc_chunks)
             raise RuntimeError("Unexpected error in built-in function malloc")
 
         idx += abs(size)
@@ -488,13 +543,25 @@ def builtin_free(args):
 
 
 def mem_command():
+    idx = 0
+    malloc_size = 0
+    chunk_count = 0
+    while idx < 1024:
+        size = malloc_chunks[idx]
+        if size > 0:
+            malloc_size += size
+            chunk_count += 1
+        elif size == 0:
+            raise RuntimeError("Unexpected error in built-in function malloc")
+
+        idx += abs(size)
+    print("Dynamic allocation : %d, %d" % (chunk_count, malloc_size))
 
 
-
-def AST_INTERPRET(ast):
+def AST_INTERPRET(ast, interface):
     assert isinstance(ast, GOAL)
 
-    env = ENV()
+    env = ENV(interface)
 
     for define in ast.defs:
         if isinstance(define, VDEF):
@@ -502,10 +569,15 @@ def AST_INTERPRET(ast):
         else:  # isinstance(define, FDEF)
             define_func(define, env)
 
-    return exec_expr(CALL(ID("main", (-1, -1)), [], (-1, -1)), env)
+    env.interface.is_running = True
+
+    exec_expr(CALL(ID("main", Ln((-1, -1))), [], Ln((-1, -1))), env)
+
+    env.interface.is_running = False
+    print("End of program")
 
 
 if __name__ == "__main__":
-    with open("../sample_input/memcopy.c", "r") as f:
+    with open("../sample_input/input.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     AST_INTERPRET(result)

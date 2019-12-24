@@ -71,6 +71,7 @@ class TEXPR(EXPR):
 class C2I(TEXPR):
     def __init__(self, expr, _):
         self.expr = expr
+        self.lineno = expr.lineno
         super().__init__(TInt())
 
     def __repr__(self):
@@ -81,6 +82,7 @@ class C2I(TEXPR):
 class I2C(TEXPR):
     def __init__(self, expr, _):
         self.expr = expr
+        self.lineno = expr.lineno
         super().__init__(TChar())
 
     def __repr__(self):
@@ -91,6 +93,7 @@ class I2C(TEXPR):
 class I2F(TEXPR):
     def __init__(self, expr, _):
         self.expr = expr
+        self.lineno = expr.lineno
         super().__init__(TFloat())
 
     def __repr__(self):
@@ -101,6 +104,7 @@ class I2F(TEXPR):
 class F2I(TEXPR):
     def __init__(self, expr, _):
         self.expr = expr
+        self.lineno = expr.lineno
         super().__init__(TInt())
 
     def __repr__(self):
@@ -113,6 +117,7 @@ class A2P(TEXPR):
         if expr.type.elem_type != ptr_type.deref_type:
             raise TypeError("invalid cast from %s to %s" % (expr.type, ptr_type))
         self.expr = expr
+        self.lineno = expr.lineno
         super().__init__(ptr_type)
 
     def __repr__(self):

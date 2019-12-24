@@ -2,23 +2,14 @@ from ctype import *
 from environ import *
 
 
-class NA(VALUE):
-    def __init__(self):
-        pass
-
-    def __repr__(self):
-        return "N/A"
-
-
 # there are two History; global and main
 class History(list):
-    def __init__(self, scope, addr):
-        self.add_table(scope, 0x804A000)
-        self.addr_mem = addr
+    def __init__(self, scope):
+        self.add_table(scope)
 
     # add empty HistoryTable when there is new scope
-    def add_table(self, scope, addr):
-        table = HistoryTable(scope, addr)
+    def add_table(self, scope):
+        table = HistoryTable(scope)
         self.append(table)
 
     # scope : function, loop, block
@@ -33,7 +24,7 @@ class History(list):
 
 # One HistoryTable for the each scope (construct)
 class HistoryTable:
-    def __init__(self, scope, addr):
+    def __init__(self, scope):
         self.scope = scope
         self.body = {}
 
@@ -78,10 +69,12 @@ def command(comm, args):
                 print("Invisible variable")
                 return
         if comm == "print":
-            print(var.get_value())
+            print(var)
+            return
         elif comm == "trace":
             for lineno, value in var.history:
-                print("%s = %s at line %d" % (var.name, value, lineno))
+                print("%s = %s at line %d" % (var.name, value if value is not None else "N/A", lineno))
+            return
     print("Invisible variable")
     return
 
@@ -115,8 +108,7 @@ def change(var, line, value):
 # add new HistoryTable to the main History
 # require scope(function or block)
 def new_scope(scope):
-    addr = history_main[-1].addr_mem
-    history_main.add_table(scope, addr)
+    history_main.add_table(scope)
 
 
 # del latest HistoryTable to the main History
@@ -126,7 +118,6 @@ def end_scope():
 
 # start address of memory
 # they are just chosen for showing some static value (far from real world)
-addr_main = 0xbc000000
 
-history_global = History("function", addr_global)
-history_main = History("function", addr_main)
+history_global = History("function")
+history_main = History("function")

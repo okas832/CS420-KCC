@@ -4,7 +4,7 @@ from logger import *
 
 
 class ENV():
-    def __init__(self):
+    def __init__(self, interface):
         printf_type = TFunc(TInt(), [])
         printf_var = VAR("printf", printf_type, VFUNC("printf", printf_type, [], BODY([], [], Ln((-1, -1)))), -1, "global")
         malloc_type = TFunc(TPtr(TChar()), [])
@@ -12,6 +12,7 @@ class ENV():
         free_type = TFunc(TVoid(), [])
         free_var = VAR("free", free_type, VFUNC("free", free_type, [], BODY([], [], Ln((-1, -1)))), -1, "global")
         self.envs = [{"printf": printf_var, "malloc": malloc_var, "free": free_var}]
+        self.interface = interface
 
     def new_env(self):
         self.envs.append({})
@@ -19,7 +20,8 @@ class ENV():
     def del_env(self):
         self.envs.pop()
 
-    def add_var(self, name, ctype, value, lineno, scope="main"):
+    def add_var(self, name, ctype, value, lineno):
+        scope = "global" if len(self.envs) == 1 else "main"
         if isinstance(ctype, TArr):
             self.envs[-1][name] = VAR(name, ctype, VPTR(VARRAY(name, ctype, lineno, scope)), lineno, scope)
         elif isinstance(ctype, TFunc):
@@ -28,7 +30,7 @@ class ENV():
         else:
             self.envs[-1][name] = VAR(name, ctype, None, lineno, scope)
             if value is not None:
-                self.envs[-1][name].set_value(value)
+                self.envs[-1][name].set_value(value, lineno)
 
     def id_resolve(self, name):
         for env in reversed(self.envs):
@@ -37,7 +39,7 @@ class ENV():
         raise SyntaxError("'%s' undeclared (first use in this function)" % name)
 
     def global_env(self):
-        env = ENV()
+        env = ENV(self.interface)
         env.envs[0] = self.envs[0]
         return env
 
@@ -52,7 +54,7 @@ class VAR():
 
     def set_value(self, value, lineno):
         assert self.ctype == value.ctype
-        self.append((lineno, value))
+        self.history.append((lineno, value))
         self.value = value
         return self.value
 
@@ -83,6 +85,8 @@ class VALUE():
         self.ctype = ctype
 
     def __repr__(self):
+        if self.ctype == TFloat():
+            return "%f" % self.value
         return "%d" % self.value
 
 
@@ -90,6 +94,7 @@ class VARRAY(VAR):
     def __init__(self, name, ctype, lineno, scope="main"):
         assert isinstance(ctype, TArr)
         self.array = [VAR("%s[%d]" % (name, i), ctype.elem_type, None, lineno, scope) for i in range(ctype.arr_size)]
+        self.name = name
         self.index = 0
         self.ctype = ctype.elem_type
 
@@ -103,15 +108,15 @@ class VARRAY(VAR):
             raise RuntimeError("Array index out of range")
         return self.array[self.index].get_value()
 
-    def set_value(self, val):
+    def set_value(self, val, lineno):
         if self.index not in range(len(self.array)):
             raise RuntimeError("Array index out of range")
-        return self.array[self.index].set_value(val)
+        return self.array[self.index].set_value(val, lineno)
 
     def __repr__(self):
         if self.ctype == TChar():
-            return "0x%08x" % ((ID(self.array) & 0xFFFFFFFF) + self.index)
-        return "0x%08x" % ((ID(self.array) & 0xFFFFFFFF) + self.index)
+            return "0x%08x" % ((id(self.array) & 0xFFFFFFFF) + self.index)
+        return "0x%08x" % ((id(self.array) & 0xFFFFFFFF) + self.index)
 
 
 class VPTR(VALUE):

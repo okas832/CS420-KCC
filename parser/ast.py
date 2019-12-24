@@ -98,6 +98,7 @@ class EMPTY_STMT(STMT):
 class EXPR_MANY(STMT, EXPR):
     def __init__(self, exprs):
         self.exprs = exprs
+        self.lineno = Ln((self.exprs[0].lineno.start, self.exprs[-1].lineno.end))
 
     def __add__(self, rhs):
         if not isinstance(rhs, EXPR):
@@ -121,7 +122,7 @@ class WHILE(STMT):
         self.lineno = lineno
 
     def __repr__(self):
-        return '%s:WHILE(%s, %s)' % (self.lineno, self.cond, self.body, lineno)
+        return '%s:WHILE(%s, %s)' % (self.lineno, self.cond, self.body)
 
 
 # FOR loop
