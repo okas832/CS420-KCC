@@ -194,16 +194,26 @@ def exec_expr(expr, genv, lenv):
 
 def exec_stmt(stmt, env):
     if isinstance(stmt, BODY):
-        # for stmt.defvs:
-        pass
+        env.new_env()
+        declare_var(stmt.defvs, env)
+        for sub in stmt.stmts:
+            exec_stmt(sub, env)
     elif isinstance(stmt, EMPTY_STMT):
         pass
     elif isinstance(stmt, EXPR_MANY):
         exec_expr(stmt, env)
     elif isinstance(stmt, WHILE):
-        pass
+        c = exec_expr(stmt.cond, env)
+        while c.value:
+            exec_expr(stmt.body, env)
+            c = exec_expr(stmt.cond, env)
     elif isinstance(stmt, FOR):
-        pass
+        exec_expr(stmt.init, env)
+        c = exec_expr(stmt.cond, env)
+        while c.value:
+            exec_stmt(stmt.body, env)
+            exec_expr(stmt.update, env)
+            c = exec_expr(stmt.cond, env)
     elif isinstance(stmt, IFELSE):
         c = exec_expr(stmt.cond, env)
         if c.value:
