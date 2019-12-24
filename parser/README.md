@@ -7,10 +7,10 @@
 - [x] Fix if-then vs. if-then-else shift/reduce conflict (PLY currently resolves to shift, which is correct)
 - [x] Implement implicit type conversion
 - [x] Implement simple type checks
-- [ ] Check if conditionals expression must be casted to TInt
+- [x] Check if conditionals expression must be casted to TInt => should be done by interpreter
 - [x] Add JUMP statement for yacc (continue, break, return)
-- [ ] Check return type of function
-- [ ] Add typing rule for PREOP and POSTOP
+- [x] Check return type of function
+- [x] Add typing rule for PREOP and POSTOP
 
 ## Grammar
 ```

@@ -66,4 +66,7 @@ int main(void)
     a = ret_iptr()[0];
     ptr1 = &a + (&b - &c);
     ptr1 = arr + a + (&b - arr);
+
+    arr[ch];
+    arr_ptr[ch];
 }
