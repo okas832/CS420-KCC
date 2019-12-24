@@ -78,7 +78,7 @@ def type_resolve(expr, env, is_const=False):
         elif not isinstance(ptr_type, TPtr):
             raise TypeError("invalid type argument of unary '*' (have '%s')" % ptr_type)
         if isinstance(ptr_type.deref_type, TVoid):
-            raise TypeError("attempting to derefence void*")
+            raise TypeError("attempting to dereference void*")
         expr.type = ptr_type.deref_type
     elif isinstance(expr, PREOP) or isinstance(expr, POSTOP):
         expr_type = type_resolve(expr.expr, env)
