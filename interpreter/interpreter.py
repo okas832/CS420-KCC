@@ -1,6 +1,8 @@
 from ast import *
 from ctype import *
 from environ import *
+from c_yacc import AST_YACC
+from c_typecheck import AST_TYPE
 import warnings
 
 
@@ -38,18 +40,17 @@ def define_func(fdef, env):
 
     # type annotation exists, although it is not isinstance(fdef, EXPR)
     ctype = fdef.func_type
-    arg_names = [arg[0] for arg in fdef.arg]
-    value = VFUNC(fdef.name, ctype, arg_names, fdef.body)
-    env.add_var(fdef.name, ctype, value)
+    arg_names = [arg[1].name for arg in fdef.arg]
+    value = VFUNC(fdef.name.name, ctype, arg_names, fdef.body)
+    env.add_var(fdef.name.name, ctype, value)
 
 
 def define_var(vdef, env):
     assert isinstance(vdef, VDEF)
 
-    ctype = vdef.type
     for vdefid, assign in vdef.pl:
         val = exec_expr(assign, env) if assign is not None else None
-        env.add_var(vdefid.name, ctype, val)
+        env.add_var(vdefid.name, vdefid.var_type, val)
 
 
 def exec_cast(expr, env):
@@ -182,8 +183,8 @@ def exec_expr(expr, env):
         string = expr.val[1:-1].encode('utf-8').decode('unicode_escape')
         arr = VARRAY("", TArr(TChar(), len(string) + 1))
         for i, s in enumerate(string):
-            arr.array[i].set_value(ord(s))
-        arr.array[-1].set_value(0)
+            arr.array[i].set_value(VALUE(ord(s), TChar()))
+        arr.array[-1].set_value(VALUE(0, TChar()))
         return VPTR(arr)
     elif isinstance(expr, CVAL):
         char = expr.val[1:-1].encode('utf-8').decode('unicode_escape')
@@ -296,8 +297,9 @@ def builtin_printf(args):
     
     # built format string from arg
     fmt = ""
-    for i in range(args[0].index, len(args[0].array)):
-        c = chr(args[0].array[i].get_value().value & 0xFF)
+    fmt_varr = args[0].deref()
+    for i in range(fmt_varr.index, len(fmt_varr.array)):
+        c = chr(fmt_varr.array[i].get_value().value & 0xFF)
         if c == '\0':
             break
         fmt += c
@@ -345,8 +347,9 @@ def AST_INTERPRET(ast):
             define_var(define, env)
         else:  # isinstance(define, FDEF)
             define_func(define, env)
+        print(env.envs)
     
-    exec_stmt(env["main"].body, env)
+    exec_stmt(env.id_resolve("main").body, env)
 
 
 if __name__ == "__main__":

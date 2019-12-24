@@ -3,7 +3,9 @@ from ctype import *
 
 class ENV():
     def __init__(self):
-        self.envs = [{}]
+        printf_type = TFunc(TVoid(), [])
+        printf_var = VAR("printf", printf_type, VFUNC("printf", printf_type, [], BODY([], [])))
+        self.envs = [{"printf": printf_var}]
 
     def new_env(self):
         self.envs.append({})
@@ -23,10 +25,10 @@ class ENV():
                 self.envs[-1][name].set_value(value)
 
     def id_resolve(self, name):
-        for env in reversed(envs):
+        for env in reversed(self.envs):
             if env.get(name) is not None:
                 return env[name]
-        raise SyntaxError("'%s' undeclared (first use in this function)" % expr.name)
+        raise SyntaxError("'%s' undeclared (first use in this function)" % name)
 
     def global_env(self):
         env = ENV()
@@ -65,7 +67,7 @@ class VALUE():
             value = int(value) & 0xFFFFFFFF
             self.value = value if value < 0x80000000 else value - 0x100000000
         elif ctype == TChar():
-            value = int(result) & 0xFF
+            value = int(value) & 0xFF
             self.value = value if value < 0x80 else value - 0x100
         else:
             raise ValueError("Not Implemented Type '%s'" % ctype)
@@ -111,8 +113,8 @@ class VPTR(VALUE):
 
 class VFUNC(VALUE):
     def __init__(self, name, ctype, arg_names, body):
-        assert isinstance(body, TFunc)
-        assert len(ctype.arg_types) == len(ctype.arg_names)
+        assert isinstance(body, BODY)
+        assert len(ctype.arg_types) == len(arg_names)
         self.name = name
         self.ctype = ctype
         self.arg_names = arg_names
@@ -120,5 +122,5 @@ class VFUNC(VALUE):
 
     def __repr__(self):
         return "%s %s(%s) %s" % (self.ctype.ret_type, self.name,
-            ', '.join('%s %s' % (self.ctype.arg_types[i], self.ctype.arg_names[i]) for i in range(len(this.arg_names))),
+            ', '.join('%s %s' % (self.ctype.arg_types[i], self.arg_names[i]) for i in range(len(self.arg_names))),
             self.body)
