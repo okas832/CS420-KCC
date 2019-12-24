@@ -116,7 +116,7 @@ def VDEF_resolve(vdef, env, target_env, is_const=False):
 
         if vdefid.name in target_env:
             raise SyntaxError("redefinition of '%s'" % vdefid.name)
-        target_env[vdefid.name] = var_type
+        vdefid.type = target_env[vdefid.name] = var_type
 
 
 def STMT_resolve(stmt, env, ret_type, inside_loop=False):
@@ -199,7 +199,7 @@ def AST_TYPE(ast):
 
             if define.name.name in genv:
                 raise SyntaxError("redefinition of '%s'" % define.name.name)
-            genv[define.name.name] = TFunc(ret_type, arg_types)
+            define.func_type = genv[define.name.name] = TFunc(ret_type, arg_types)
 
             body_resolve(define.body, [genv, args_env], ret_type, True)
 

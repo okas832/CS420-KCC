@@ -11,11 +11,16 @@ class ENV():
     def del_env(self):
         self.envs.pop()
 
-    def add_var(self, name, ctype):
+    def add_var(self, name, ctype, value=None):
         if isinstance(ctype, TArr):
             self.envs[-1][name] = [VAR("%s[%d]" % (name, i), ctype.elem_type, self) for i in range(ctype.arr_size)]
+        elif isinstance(ctype, TFunc):
+            assert value is not None
+            self.envs[-1][name] = value
         else:
             self.envs[-1][name] = VAR(name, ctype, self)
+            if value is not None:
+                self.envs[-1][name].set_value(value)
 
     def id_resolve(self, name):
         for env in reversed(envs):
