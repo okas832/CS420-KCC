@@ -18,12 +18,9 @@ class ENV():
             self.envs[-1][name] = VAR(name, ctype, self)
 
     def id_resolve(self, name):
-        if self.envs[-1].get(name) is not None:
-            return self.envs[-1][name]
-
-        if self.envs[0].get(name) is not None:
-            return self.envs[0][name]
-
+        for env in reversed(envs):
+            if env.get(name) is not None:
+                return env[name]
         raise SyntaxError("'%s' undeclared (first use in this function)" % expr.name)
 
 
