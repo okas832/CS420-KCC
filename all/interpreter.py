@@ -244,7 +244,7 @@ def exec_expr(expr, env):
     elif isinstance(expr, POSTOP):
         return exec_postop(expr, env)
     elif isinstance(expr, ADDR):
-        return VPTR(lvalue_resolve(expr, env))
+        return VPTR(lvalue_resolve(expr.expr, env))
     elif isinstance(expr, DEREF):
         val = exec_expr(expr.expr, env)
         if isinstance(val, VPTR):
@@ -323,7 +323,7 @@ def builtin_printf(args):
        not isinstance(args[0].deref(), VARRAY) or \
        not isinstance(args[0].deref().get_value().ctype, TChar):
        raise RuntimeError("Invalid argument given as format string in built-in function printf")
-    
+
     # built format string from arg
     fmt = ""
     fmt_varr = args[0].deref()
@@ -334,7 +334,7 @@ def builtin_printf(args):
         fmt += c
     else:
         raise RuntimeError("Format string with no NULL terminator in built-in printf")
-    
+
     res = ""
     i, arg_idx = 0, 1
     while i < len(fmt):
@@ -377,10 +377,10 @@ def AST_INTERPRET(ast):
         else:  # isinstance(define, FDEF)
             define_func(define, env)
 
-    exec_stmt(env.id_resolve("main").body, env)
+    return exec_expr(CALL(ID("main"), []), env)
 
 
 if __name__ == "__main__":
-    with open("../sample_input/recursive.c", "r") as f:
+    with open("../sample_input/recursive2.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     AST_INTERPRET(result)

@@ -88,7 +88,7 @@ class VARRAY(VALUE):
         self.ctype = ctype.elem_type
 
     def subscr(self, idx):
-        if self.index + idx >= len(self.array):
+        if self.index + idx not in range(len(self.array)):
             raise RuntimeError("Array index out of range")
         new = copy(self)
         new.index += idx
