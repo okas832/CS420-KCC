@@ -305,28 +305,39 @@ class CALLINST(INSTR):
     def __repr__(self):
         return "CALL(%s, %s), POP(%d)"%(self.dst, self.func, self.pop)
 
-class FORF(INSTR):
-    def __init__(self, init, comp, post, body):
-        self.init = init
-        self.comp = comp
-        self.post = post
-        self.body = body
+class JMP(INSTR):
+    def __init__(self, label):
+        self.label = label
 
     def __repr__(self):
-        return "FOR(%s, %s, %s, %s)"%(self.init, self.body, self.post, self.comp)
+        return "JMP(%s)"%(self.label)
 
-class IFELSEF(INSTR):
-    def __init__(self, cond, if_stmt, else_stmt):
-        self.cond = cond
-        self.if_stmt = if_stmt
-        self.else_stmt = else_stmt
+class JNZ(INSTR):
+    def __init__(self, label, src):
+        self.label = label
+        self.src = src
 
     def __repr__(self):
-        return 'IFELSE(%s, %s, %s)' % (self.cond, self.if_stmt, self.else_stmt)
+        return "JNZ(%s, %s)"%(self.label, self.src)
+
+class JZ(INSTR):
+    def __init__(self, label, src):
+        self.label = label
+        self.src = src
+
+    def __repr__(self):
+        return "JZ(%s, %s)"%(self.label, self.src)
+
+class LABEL(INSTR):
+    def __init__(self, label):
+        self.label = label
+
+    def __repr__(self):
+        return "LABEL(%s)"%(self.label)
 
 class RET(INSTR):
     def __init__(self, src):
         self.src = src
 
     def __repr__(self):
-        return "RETURN(%d)"%(self.src)
+        return "RETURN(%s)"%(self.src)

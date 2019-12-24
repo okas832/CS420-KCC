@@ -128,11 +128,15 @@ def assemble_addr(code, local_var):
         src = assemble_expr(code, local_var)
         return src
 
-def assemble_expr(code, local_var):
+JMP_LABEL_CNT = 0
+IF_LABEL_CNT = 0
+def assemble_expr(code,local_var):
     global tmp_cnt
     global offset
     global pre_code
     global post_code
+    global JMP_LABEL_CNT
+    global IF_LABEL_CNT
     tmp_cnt += 1
     offset -= 4
     local_var.append([4, "tmp%d" % (tmp_cnt), offset])
@@ -204,7 +208,7 @@ def assemble_expr(code, local_var):
     elif isinstance(code, ASSIGN):
         lhs = assemble_addr(code.lhs, local_var)
         rhs = assemble_expr(code.rhs, local_var)
-        return lhs + rhs + [SAVE(lhs[-1].dst, rhs[-1].dst)]
+        return lhs + rhs + [SAVE(lhs[-1].dst, rhs[-1].dst), DEREFER(dst, lhs[-1].dst)]
     elif isinstance(code, SUBSCR):
         tmp_cnt += 1
         offset -= 4
@@ -275,18 +279,52 @@ def assemble_expr(code, local_var):
         return src
     elif isinstance(code, FOR):
         init_code = assemble_expr(code.init, local_var)
+        init_code = pre_code + init_code + post_code
+        pre_code = []
+        post_code = []
         cond_code = assemble_expr(code.cond, local_var)
-        post_code = assemble_expr(code.update, local_var)
+        cond_code = pre_code + cond_code + post_code
+        pre_code = []
+        post_code = []
+        next_code = assemble_expr(code.update, local_var)
+        next_code = pre_code + next_code + post_code
+        pre_code = []
+        post_code = []
         body_code = assemble_expr(code.body, local_var)
-        return [FORF(init_code, cond_code, post_code, body_code)]
+        JMP_LABEL_CNT += 1
+        return init_code + [JMP("for_lbl%d_2"%(JMP_LABEL_CNT))]\
+                         + [LABEL("for_lbl%d_1"%(JMP_LABEL_CNT))]\
+                         + body_code\
+                         + [LABEL("for_lbl%d_4"%(JMP_LABEL_CNT))]\
+                         + next_code\
+                         + [LABEL("for_lbl%d_2"%(JMP_LABEL_CNT))]\
+                         + cond_code\
+                         + [JNZ("for_lbl%d_1"%(JMP_LABEL_CNT), cond_code[-1].dst)]\
+                         + [LABEL("for_lbl%d_3"%(JMP_LABEL_CNT))]
     elif isinstance(code, IFELSE):
         cond_code = assemble_expr(code.cond, local_var)
         if_stmt_code = assemble_expr(code.if_stmt, local_var)
         else_stmt_code = assemble_expr(code.else_stmt, local_var)
-        return [IFELSEF(cond_code, if_stmt_code, else_stmt_code)]
+        IF_LABEL_CNT += 1
+        return cond_code + [JZ("if_lbl%d_1"%(IF_LABEL_CNT), cond_code[-1].dst)]\
+                         + if_stmt_code\
+                         + [JMP("if_lbl%d_2"%(IF_LABEL_CNT))]\
+                         + [LABEL("if_lbl%d_1"%(IF_LABEL_CNT))]\
+                         + else_stmt_code\
+                         + [LABEL("if_lbl%d_2"%(IF_LABEL_CNT))]
+    elif isinstance(code, BREAK):
+        return [JMP("for_lbl%d_3"%(JMP_LABEL_CNT + 1))]
+    elif isinstance(code, CONTINUE):
+        return [JMP("for_lbl%d_4"%(JMP_LABEL_CNT + 1))]
     elif isinstance(code, EXPR_MANY):
         expr_code = []
         for expr in code.exprs:
+            res_code = assemble_expr(expr, local_var)
+            expr_code += res_code
+        return expr_code
+    elif isinstance(code, BODY):
+        expr_code = []
+        for expr in code.stmts:
             res_code = assemble_expr(expr, local_var)
             expr_code += res_code
         return expr_code
@@ -366,7 +404,7 @@ def id2addr(id, glob_var, func_arg, local_var):
     for typ in ["int", "float", "char"]:
         for var in glob_var.get(typ, []):
             if var[0].name == id:
-                return "__" + str(id)
+                return "[__" + str(id) + "]"
     if id[0] == '"' and id[-1] == '"':
         STR_DATA.append(("str_label%d"%(len(STR_DATA)+1), id))
         return "str_label%d"%(len(STR_DATA))
@@ -568,19 +606,21 @@ def emit_text_section(func, glob_var):
             elif isinstance(instr, DEREFER):
                 src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
                 dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
-                res += "\tlea eax, %s\n"%(src_addr)
+                res += "\tmov eax, %s\n"%(src_addr)
                 res += "\tmov eax, [eax]\n"
                 res += "\tmov %s, eax\n"%(dst_addr)
             elif isinstance(instr, INC):
                 dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
-                res += "\tlea eax, %s\n"%(dst_addr)
+                res += "\tmov eax, %s\n"%(dst_addr)
                 res += "\tmov edx, %s\n"%(dst_addr)
+                res += "\tmov edx, [edx]\n"
                 res += "\tinc edx\n"
                 res += "\tmov [eax], edx\n"
             elif isinstance(instr, DEC):
                 dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
-                res += "\tlea eax, %s\n"%(dst_addr)
+                res += "\tmov eax, %s\n"%(dst_addr)
                 res += "\tmov edx, %s\n"%(dst_addr)
+                res += "\tmov edx, [edx]\n"
                 res += "\tdec edx\n"
                 res += "\tmov [eax], edx\n"
             elif isinstance(instr, NEG):
@@ -620,6 +660,20 @@ def emit_text_section(func, glob_var):
                 res += "\tmov %s, eax\n"%(dst_addr)
                 if instr.pop != 0:
                     res += "\tadd esp, %d\n"%(instr.pop)
+            elif isinstance(instr, JMP):
+                res += "\tjmp %s\n"%(instr.label)
+            elif isinstance(instr, JNZ):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tcmp eax, 0\n"
+                res += "\tjnz %s\n"%(instr.label)
+            elif isinstance(instr, JZ):
+                src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                res += "\tmov eax, %s\n"%(src_addr)
+                res += "\tcmp eax, 0\n"
+                res += "\tjz %s\n"%(instr.label)
+            elif isinstance(instr, LABEL):
+                res += "%s:\n"%(instr.label)
             elif isinstance(instr, RET):
                 last = True
                 src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
@@ -659,7 +713,7 @@ def hdlr_goal(ast):
 \tpush eax
 \tcall exit"""
     for label, data in STR_DATA:
-        data_section += "\t%s: db %s, 0\n"%(label, data)
+        data_section += "\t%s: db %s, 0\n"%(label, data.replace("\\n", '", 10, "'))
     return prefix + data_section + text_section + postfix
 
 def AST_ASM(ast):
