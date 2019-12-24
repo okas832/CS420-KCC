@@ -27,4 +27,5 @@ int main(void)
     {
         printf("Holy Shiiiiit.\n");
     }
+    return 0;
 }
