@@ -54,13 +54,13 @@ class HistoryTable:
     
     # Array인 경우 추가 수정 필요
     def var_change(self, var, line, value):
-        change = (line, value)
+        temp = (line, value)
         index = self.var_find(var)
 
         if index == "no":
             return "no"
         else:
-            self.body[index][1].append(change)
+            self.body[index][1].append(temp)
 
 
 # CLI command : print, trace
