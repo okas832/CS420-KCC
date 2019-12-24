@@ -1,7 +1,6 @@
 // line comment
 
-int
-main()
+int main(void)
 {
 	/*
 		multiline

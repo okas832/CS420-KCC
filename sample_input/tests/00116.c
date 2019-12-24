@@ -4,8 +4,7 @@ f(int f)
 	return f;
 }
 
-int
-main()
+int main(void)
 {
 	return f(0);
 }

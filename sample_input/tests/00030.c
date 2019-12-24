@@ -4,8 +4,7 @@ f()
 	return 100;
 }
 
-int
-main()
+int main(void)
 {
 	if (f() > 1000)
 		return 1;

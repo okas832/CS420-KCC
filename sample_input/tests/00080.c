@@ -4,8 +4,7 @@ voidfn()
     return;
 }
 
-int
-main()
+int main(void)
 {
     voidfn();
     return 0;

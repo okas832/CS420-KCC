@@ -1,7 +1,6 @@
 int x;
 
-int
-main()
+int main(void)
 {
 	x = 0;
 	return x;

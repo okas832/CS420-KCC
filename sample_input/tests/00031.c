@@ -10,8 +10,7 @@ one()
 	return 1;
 }
 
-int
-main()
+int main(void)
 {
 	int x;
 	int y;
