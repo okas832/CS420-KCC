@@ -121,7 +121,7 @@ class WHILE(STMT):
         self.lineno = lineno
 
     def __repr__(self):
-        return '%s:WHILE(%s, %s)' % (self.lineno, self.cond, self.body, lineno)
+        return '%s:WHILE(%s, %s)' % (self.lineno, self.cond, self.body)
 
 
 # FOR loop

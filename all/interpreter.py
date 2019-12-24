@@ -450,7 +450,7 @@ def builtin_free(args):
 
     if not isinstance(args[0].ctype, VPTR) and \
        not isinstance(args[0].deref(), VARRAY) or \
-       not isinstance(args[0].deref().get_value().ctype, TChar):
+       not isinstance(args[0].deref().ctype, TChar):
        raise RuntimeError("not allocated address")
 
     if args[0].deref().array is not malloc_buffer.array:
@@ -500,6 +500,6 @@ def AST_INTERPRET(ast):
 
 
 if __name__ == "__main__":
-    with open("../sample_input/mergesort.c", "r") as f:
+    with open("../sample_input/memcopy.c", "r") as f:
         result = AST_TYPE(AST_YACC(f.read()))
     AST_INTERPRET(result)
