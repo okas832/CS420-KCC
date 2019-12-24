@@ -3,19 +3,28 @@ from ctype import *
 
 class ENV():
     def __init__(self):
-        self.vars = {}
+        self.envs = [{}]
+
+    def new_env(self):
+        self.envs.append({})
+
+    def del_env(self):
+        self.envs.pop()
 
     def add_var(self, name, ctype):
         if isinstance(ctype, TArr):
-            self.vars[name] = [VAR("%s[%d]" % (name, i), ctype.elem_type, self) for i in range(ctype.arr_size)]
+            self.envs[-1][name] = [VAR("%s[%d]" % (name, i), ctype.elem_type, self) for i in range(ctype.arr_size)]
         else:
-            self.vars[name] = VAR(name, ctype, self)
+            self.envs[-1][name] = VAR(name, ctype, self)
 
-    def exist_var(self, name)
-        return name in self.vars
+    def id_resolve(self, name):
+        if self.envs[-1].get(name) is not None:
+            return self.envs[-1][name]
 
-    def find_var(self, name):
-        return self.vars.get(name)
+        if self.envs[0].get(name) is not None:
+            return self.envs[0][name]
+
+        raise SyntaxError("'%s' undeclared (first use in this function)" % expr.name)
 
 
 class VALUE():

@@ -3,56 +3,43 @@ from ctype import *
 from environ import *
 
 
-def id_resolve(expr, genv, lenv):
-    assert isinstance(expr, ID)
-
-    if lenv.exist_var(expr.name):
-        return lenv.find_var(expr.name)
-
-    if genv.exist_var(expr.name):
-        return genv.find_var(expr.name)
-
-    raise SyntaxError("'%s' undeclared (first use in this function)" % expr.name)
-
-
-def lvalue_resolve(expr, genv, lenv):
+def lvalue_resolve(expr, env):
     assert isinstance(expr, ID) or isinstance(expr, DEREF) or (isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID))
     # TODO: int a[10]; int **b = &a; (*b)[0] = 1;
 
     if isinstance(expr, DEREF):
-        val = exec_expr(expr.expr)
+        val = exec_expr(expr.expr, env)
         if isinstance(val, VPTR):
             return val.deref()
         else:
             raise TypeError("invalid type argument of unary '*' (have '%s')" % val.ctype)
     if isinstance(expr, ID):
-        return id_resolve(expr, genv, lenv)
+        return env.id_resolve(expr.name)
     if isinstance(expr, SUBSCR) and isinstance(expr.arrexpr, ID):
-        idx = exec_expr(expr.idxexpr, genv, lenv)
-        if idx.ctype == TInt():
-            var = id_resolve(expr.arrexpr, genv, lenv)
-            return var[idx]
-        raise TypeError("array subscript is not an integer")
+        idx = exec_expr(expr.idxexpr, env)
+        var = env.id_resolve(expr.arrexpr.name)
+        return var[idx.value]
+        # raise TypeError("array subscript is not an integer")
 
 
-def define_func(expr):
+def define_func(expr, env):
     assert isinstance(expr, FDEF)
 
 
-def define_var(expr, genv, lenv, tenv):
+def define_var(expr, env):
     assert isinstance(expr, VDEFID)
 
     ctype = expr.type
     for name, assign in expr.pl:
         if assign is not None:
-            val = exec_expr(assign, genv, lenv)
-        tenv.add_var(name, ctype)
+            val = exec_expr(assign, env)
+        env.add_var(name, ctype)
         if assign is not None:
-            tenv.find_var(name).set_value(val)
+            env.id_resolve(name).set_value(val)
 
 
-def exec_cast(expr, genv, lenv):
-    result = exec_expr(expr.expr, genv, lenv)
+def exec_cast(expr, env):
+    result = exec_expr(expr.expr, env)
 
     if isinstance(expr, C2I):
         assert result.ctype == TChar()
@@ -70,10 +57,10 @@ def exec_cast(expr, genv, lenv):
     raise ValueError("Not Implemented Type Casting: %s" % result.expr)
 
 
-def exec_preop(expr, genv, lenv):
+def exec_preop(expr, env):
     assert isinstance(expr, PREOP)
 
-    val = exec_expr(expr.expr, genv, lenv)
+    val = exec_expr(expr.expr, env)
 
     # TODO: INC and DEC operator
     if expr.op == "++":
@@ -91,11 +78,11 @@ def exec_preop(expr, genv, lenv):
     return VALUE(result, val.ctype)
 
 
-def exec_binop(expr, genv, lenv):
+def exec_binop(expr, env):
     assert isinstance(expr, BINOP)
 
-    lhs = exec_expr(expr.lhs, genv, lenv)
-    rhs = exec_expr(expr.rhs, genv, lenv)
+    lhs = exec_expr(expr.lhs, env)
+    rhs = exec_expr(expr.rhs, env)
     assert lhs.ctype == rhs.ctype
     ctype = lhs.ctype
 
@@ -145,11 +132,11 @@ def exec_binop(expr, genv, lenv):
     return VALUE(result, ctype)
 
 
-def exec_assign(expr, genv, lenv):
+def exec_assign(expr, env):
     assert isinstance(expr, ASSIGN)
 
-    rhs = exec_expr(expr.rhs, genv, lenv)
-    lhs = lvalue_resolve(expr.lhs, genv, lenv)
+    rhs = exec_expr(expr.rhs, env)
+    lhs = lvalue_resolve(expr.lhs, env)
     return lhs.set_value(rhs)
 
 
@@ -163,17 +150,17 @@ def exec_expr(expr, genv, lenv):
     elif isinstance(expr, CVAL):
         return VALUE(expr.val, TChar())
     elif isinstance(expr, TEXPR):
-        return exec_cast(expr, genv, lenv)
+        return exec_cast(expr, env)
     elif isinstance(expr, ID):
-        var = id_resolve(expr, genv, lenv)
+        var = env.id_resolve(expr.name)
         if isinstance(var, VAR):
             return var.get_value()
         else:
             assert isinstance(var, list)
             return var
     elif isinstance(expr, SUBSCR):
-        arr = exec_expr(expr.arrexpr, genv, lenv)
-        idx = exec_expr(expr.idxexpr, genv, lenv)
+        arr = exec_expr(expr.arrexpr, env)
+        idx = exec_expr(expr.idxexpr, env)
         assert isinstance(arr, list)
         return arr[idx].get_value()
     elif isinstance(expr, CALL):
@@ -182,9 +169,9 @@ def exec_expr(expr, genv, lenv):
         # TODO: should handle ++, --
         pass
     elif isinstance(expr, ADDR):
-        return VPTR(lvalue_resolve(expr, genv, lenv))
+        return VPTR(lvalue_resolve(expr, env))
     elif isinstance(expr, DEREF):
-        val = exec_expr(expr.expr, genv, lenv)
+        val = exec_expr(expr.expr, env)
         if isinstance(val, VPTR):
             return val.deref().get_value()
         elif isinstance(val, list):
@@ -192,50 +179,49 @@ def exec_expr(expr, genv, lenv):
         else:
             raise ValueError("Cannot dereference '%s'" % val)
     elif isinstance(expr, PREOP):
-        return exec_preop(expr, genv, lenv)
+        return exec_preop(expr, env)
     elif isinstance(expr, BINOP):
-        return exec_binop(expr, genv, lenv)
+        return exec_binop(expr, env)
     elif isinstance(expr, ASSIGN):
-        return exec_assign(expr, genv, lenv)
+        return exec_assign(expr, env)
     elif isinstance(expr, EXPR_MANY):
         for e in expr.exprs:
-            val = exec_expr(val, genv, lenv)
+            val = exec_expr(val, env)
         return val
 
     raise ValueError("invalid expression '%s'" % expr)
 
 
-def exec_stmt(stmt, genv, lenv):
+def exec_stmt(stmt, env):
     if isinstance(stmt, BODY):
         pass
     elif isinstance(stmt, EMPTY_STMT):
         pass
     elif isinstance(stmt, EXPR_MANY):
-        exec_expr(stmt, genv, lenv)
+        exec_expr(stmt, env)
     elif isinstance(stmt, WHILE):
         pass
     elif isinstance(stmt, FOR):
         pass
     elif isinstance(stmt, IFELSE):
-        c = exec_expr(cond, genv, lenv)
+        c = exec_expr(stmt.cond, env)
         if c.value:
-            exec_stmt(stmt.if_stmt, genv, lenv)
+            exec_stmt(stmt.if_stmt, env)
         elif stmt.else_stmt is not None:
-            exec_stmt(stmt.else_stmt, genv, lenv)
+            exec_stmt(stmt.else_stmt, env)
     elif isinstance(stmt, CONTINUE):
         pass
     elif isinstance(stmt, BREAK):
         pass
     elif isinstance(stmt, RETURN):
         if stmt.expr is not None:
-            return exec_expr(stmt.expr, genv, lenv)
+            return exec_expr(stmt.expr, env)
         return None
 
 
 def test(ast):
     assert isinstance(ast, GOAL)
 
-    genv = ENV()
-    lenv = ENV()
+    env = ENV()
 
-    exec_expr(ast, genv, lenv)
+    exec_expr(ast, env)
