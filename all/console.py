@@ -29,14 +29,19 @@ class Console:
                     cli = args[0]
                     var = args[1]
                     logger.command(cli, var)
+            # NEXT case
             elif args[0] == 'next':
                 cnt = 0
                 if len(args) <= 1:
                     cnt = 1
                 else:
                     cnt = int(args[1])
-                self.interface.lineuntil = self.linecurr + cnt
-                return
+                # assert more than 1 line execute
+                if cnt == 0:
+                    raise commandError
+                else:
+                    self.interface.lineuntil = self.linecurr + cnt
+                    return
 
 def main():
     console = console("input.c")

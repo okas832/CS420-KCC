@@ -5,6 +5,9 @@ from ctype import *
 from logger import *
 from console import *
 
+class notStatementError(Exception):
+    pass
+
 class Interface:
     def __init__(self, filename):
         self.filename = filename
@@ -27,15 +30,17 @@ class Interface:
         self.makeAST()
 
     def execute(AST):
-        ## check line variables before executing current node
-        if self.linecurr >= self.lineuntil:
-            self.linecurr = self.lineuntil
-            self.console(self.linecurr)
+        ## first, "execute" self
+        ## assert given AST is STMT type
+        if isinstance(AST, STMT):
+            ## check start 
+            # execute first stmt of that body
         else:
-            # todo : exe 1 line and update variables
-            pass
+            raise notStatementError()
+        ## check line variables before executing current node
         ## recursively execute child nodes
 
     def start():
+        ## should execute from body of main function
         execute()
     
