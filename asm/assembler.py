@@ -116,6 +116,7 @@ def assemble_addr(code, local_var):
     local_var.append(["int", "tmp%d" % (tmp_cnt), offset])
     dst = "tmp%d" % (tmp_cnt)
     if isinstance(code, ID):
+
         return [IDADDR(dst, code)]
     elif isinstance(code, SUBSCR):
         arr = assemble_addr(code.arrexpr, local_var)
@@ -196,7 +197,6 @@ def assemble_expr(code,local_var):
             return lhs + rhs + [LEC(dst, lhs[-1].dst, rhs[-1].dst)]
         elif code.op == ">=":
             return lhs + rhs + [GEC(dst, lhs[-1].dst, rhs[-1].dst)]
-
     elif isinstance(code, ID):
         return [MOV(dst, code.name)]
     elif isinstance(code, I2C):
@@ -341,23 +341,20 @@ def assemble_body(func,  arg_var):
     code = []
     for defv in func.body.defvs:
         size = 4
-        ts = 4
         for var, val in defv.pl:
             # char is 1 byte
             if defv.type == "char":
                 size = 1
-                ts = 1
             # pointer size always 4
             if var.ptr_cnt != 0:
                 size = 4
-                ts = 4
             # if array, multiply
             if var.array_sz:
                 size *= var.array_sz
 
             # alloc space
             offset -= size
-            local_var.append([ts, var.name, offset])
+            local_var.append([var, var.name, offset])
             # align
             offset -= offset % 4
             if val:
@@ -410,6 +407,31 @@ def id2addr(id, glob_var, func_arg, local_var):
         return "str_label%d"%(len(STR_DATA))
     return "[%s]"%(id)
 
+def id2type(id, glob_var, func_arg, local_var):
+    global STR_DATA
+    if isinstance(id, int):
+        return VDEFID("int", 0, None)
+    if isinstance(id, ID):
+        id = id.name
+    for var in local_var:
+        if var[1] == id:
+            return var[0]
+    for var in func_arg:
+        if var[1].name == id:
+            return var[1]
+    for typ in ["int", "float", "char"]:
+        for var in glob_var.get(typ, []):
+            if var[0].name == id:
+                return var[0]
+    return 0
+
+def set_dst_type(id, glob_var, func_arg, local_var, src_type):
+    global STR_DATA
+    for i in range(len(local_var)):
+        if local_var[i][1] == id:
+            local_var[i][0] = src_type
+            return
+
 def emit_text_section(func, glob_var):
     res = "section .text\n"
     for f in func:
@@ -425,6 +447,8 @@ def emit_text_section(func, glob_var):
             if isinstance(instr, MOV):
                 src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
                 dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                src_type = id2type(instr.src, glob_var, func_arg, local_var)
+                set_dst_type(instr.dst, glob_var, func_arg, local_var, src_type)
                 res += "\tmov eax, %s\n"%(src_addr)
                 res += "\tmov %s, eax\n"%(dst_addr)
             elif isinstance(instr, ADD):
@@ -455,10 +479,20 @@ def emit_text_section(func, glob_var):
                 src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
                 src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
                 dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\txor edx, edx\n"
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov ebx, %s\n"%(src2_addr)
+                res += "\tidiv ebx\n"
+                res += "\tmov %s, eax\n"%(dst_addr)
             elif isinstance(instr, MOD):
                 src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
                 src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
                 dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                res += "\txor edx, edx\n"
+                res += "\tmov eax, %s\n"%(src1_addr)
+                res += "\tmov ebx, %s\n"%(src2_addr)
+                res += "\tidiv ebx\n"
+                res += "\tmov %s, edx\n"%(dst_addr)
             elif isinstance(instr, AND):
                 src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
                 src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
@@ -592,14 +626,19 @@ def emit_text_section(func, glob_var):
                 res += "\tmov [eax], edx\n"
             elif isinstance(instr, IDADDR):
                 src_addr = id2addr(instr.src, glob_var, func_arg, local_var)
+                src_type = id2type(instr.src, glob_var, func_arg, local_var)
                 dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
+                set_dst_type(instr.dst, glob_var, func_arg, local_var, src_type)
                 res += "\tlea eax, %s\n"%(src_addr)
                 res += "\tmov %s, eax\n"%(dst_addr)
             elif isinstance(instr, ARRIDX):
                 src1_addr = id2addr(instr.src1, glob_var, func_arg, local_var)
+                src1_type = id2type(instr.src1, glob_var, func_arg, local_var)
                 src2_addr = id2addr(instr.src2, glob_var, func_arg, local_var)
                 dst_addr = id2addr(instr.dst, glob_var, func_arg, local_var)
                 res += "\tmov eax, %s\n"%(src1_addr)
+                if src1_type.ptr_cnt != 0:
+                    res += "\tmov eax, [eax]\n"
                 res += "\tmov edx, %s\n"%(src2_addr)
                 res += "\tlea eax, [edx * 4 + eax]\n"
                 res += "\tmov %s, eax\n"%(dst_addr)
@@ -720,6 +759,6 @@ def AST_ASM(ast):
     return hdlr_goal(ast)
 
 if __name__ == "__main__":
-    with open("input.c", "r") as f:
+    with open("../sample_input/recursive.c", "r") as f:
         result = AST_ASM(AST_TYPE(AST_YACC(f.read())))
     print(result)

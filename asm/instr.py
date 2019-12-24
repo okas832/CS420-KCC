@@ -341,3 +341,10 @@ class RET(INSTR):
 
     def __repr__(self):
         return "RETURN(%s)"%(self.src)
+
+class DUMMY(INSTR):
+    def __init__(self, dst):
+        self.dst = dst
+
+    def __repr__(self):
+        return "DUMMY()"
