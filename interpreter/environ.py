@@ -4,7 +4,7 @@ from copy import copy
 
 class ENV():
     def __init__(self):
-        printf_type = TFunc(TVoid(), [])
+        printf_type = TFunc(TInt(), [])
         printf_var = VAR("printf", printf_type, VFUNC("printf", printf_type, [], BODY([], [])))
         self.envs = [{"printf": printf_var}]
 

@@ -237,10 +237,14 @@ def exec_expr(expr, env):
                 arg = exec_expr(argexpr, env)
                 func_env.add_var(argname, argtype, arg)
             ret = exec_stmt(func.body, func_env, True)
-            if isinstance(ret, VRETURN):
+            if isinstance(ret, VRETURN) and ret.ret_val is not None and func.ctype.ret_type != TVoid():
                 return ret.ret_val
-            else:
+            elif (ret is None or (isinstance(ret, VRETURN) and ret.ret_val is None)) and \
+                func.ctype.ret_type == TVoid():
                 return None
+            else:
+                assert ret is None or (isinstance(ret, VRETURN) and ret.ret_val is None)
+                raise RuntimeError("Missing return (expected '%s')" % func.ctype.ret_type)
     elif isinstance(expr, POSTOP):
         return exec_postop(expr, env)
     elif isinstance(expr, ADDR):
@@ -346,7 +350,7 @@ def builtin_printf(args):
             if arg_idx >= len(args):
                 raise RuntimeError("Insufficient variadic arguments while executing built-in printf")
             elif not isinstance(args[arg_idx].ctype, TInt) and not isinstance(args[arg_idx].ctype, TChar):
-                raise RuntimeError("Invalid argument type while executing built-in printf (expected int/char, got %s)" % type(args[arg_idx]))
+                raise RuntimeError("Invalid argument type while executing built-in printf (expected 'int'/'char', got '%s')" % type(args[arg_idx]))
             res += str(args[arg_idx].value)
             i += 2
             arg_idx += 1
@@ -354,7 +358,7 @@ def builtin_printf(args):
             if arg_idx >= len(args):
                 raise RuntimeError("Insufficient variadic arguments while executing built-in printf")
             elif not isinstance(args[arg_idx].ctype, TFloat):
-                raise RuntimeError("Invalid argument type while executing built-in printf (expected float, got %s)" % type(args[arg_idx]))
+                raise RuntimeError("Invalid argument type while executing built-in printf (expected 'float', got '%s')" % type(args[arg_idx]))
             res += str(args[arg_idx].value)
             i += 2
             arg_idx += 1
@@ -367,7 +371,7 @@ def builtin_printf(args):
     if arg_idx != len(args):
         warnings.warn("Trailing variadic arguments after executing built-in printf (%d arguments unused)" % (len(args) - arg_idx), RuntimeWarning)
 
-    return None
+    return VALUE(len(res), TInt())
 
 
 def AST_INTERPRET(ast):
