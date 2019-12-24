@@ -175,6 +175,7 @@ def AST_TYPE(ast):
     assert isinstance(ast, GOAL)
 
     genv = {}
+    fdef_deferred = []
 
     for define in ast.defs:
         if isinstance(define, VDEF):
@@ -203,7 +204,10 @@ def AST_TYPE(ast):
                 raise SyntaxError("redefinition of built-in function '%s'" % define.name.name)
             define.func_type = genv[define.name.name] = TFunc(ret_type, arg_types)
 
-            body_resolve(define.body, [genv, args_env], ret_type, True)
+            fdef_deferred.append((define.body, args_env, ret_type))
+    
+    for body, args_env, ret in fdef_deferred:
+        body_resolve(body, [genv, args_env], ret, True)
 
     main_type_expect = TFunc(TInt(), [])
     if "main" not in genv:
