@@ -84,14 +84,15 @@ class VARRAY(VALUE):
         self.index = 0
 
     def subscr(self, idx):
-        self.index += idx
-        return self
+        new = self.copy()
+        new.index += idx
+        return new
 
     def get_value(self):
         return self.array[self.index].get_value()
 
     def set_value(self, val):
-        return self.array[self.index].get_value()
+        return self.array[self.index].set_value(val)
 
 
 class VPTR(VALUE):
