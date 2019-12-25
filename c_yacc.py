@@ -522,8 +522,3 @@ def AST_YACC(code):
     return yacc.parse(code, tracking=True)
 
 c_parser = yacc.yacc()
-
-if __name__ == "__main__":
-    with open("input.c", "r") as f:
-        result = AST_YACC(f.read())
-    print(result)

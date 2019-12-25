@@ -196,7 +196,8 @@ def exec_binop(expr, env):
                 raise RuntimeError("Invalid binary operation against pointer types")
 
         assert lhs.ctype == rhs.ctype
-        ctype = lhs.ctype
+        ctype = TInt() if expr.op in ["==", "!=", "<", ">", "<=", ">="] else lhs.ctype
+
 
         if expr.op == "+":
             result = lhs.value + rhs.value
@@ -223,27 +224,21 @@ def exec_binop(expr, env):
             result = lhs.value >> rhs.value
         elif expr.op == "==":
             result = lhs.value == rhs.value
-            ctype = TInt()
         elif expr.op == "!=":
             result = lhs.value != rhs.value
-            ctype = TInt()
         elif expr.op == "<":
             result = lhs.value < rhs.value
-            ctype = TInt()
         elif expr.op == ">":
             result = lhs.value > rhs.value
-            ctype = TInt()
         elif expr.op == "<=":
             result = lhs.value <= rhs.value
-            ctype = TInt()
         elif expr.op == ">=":
             result = lhs.value >= rhs.value
-            ctype = TInt()
         else:
             raise RuntimeError("Not Implemented Operator '%s'" % expr.op)
 
         return VALUE(result, ctype)
-    
+
     except RuntimeError as runtimeE:
         if len(runtimeE.args) <= 1:
             runtimeE = RuntimeError(runtimeE.args[0], expr.lineno.start)
@@ -618,9 +613,3 @@ def AST_INTERPRET(ast, interface):
 
     env.interface.is_running = False
     print("End of program")
-
-
-if __name__ == "__main__":
-    with open("../sample_input/input.c", "r") as f:
-        result = AST_TYPE(AST_YACC(f.read()))
-    AST_INTERPRET(result)

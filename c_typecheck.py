@@ -9,7 +9,7 @@ def find_id(name, env):
         if name in scope:
             return scope[name]
     else:
-        return None
+        raise SyntaxError("'%s' undeclared (first use in this function)" % name)
 
 
 def type_resolve(expr, env, is_const=False):
@@ -18,8 +18,6 @@ def type_resolve(expr, env, is_const=False):
             if is_const:  # global var VDEF_resolve
                 raise SyntaxError("initializer element is not constant")
             expr.type = find_id(expr.name, env)
-            if expr.type is None:
-                raise SyntaxError("'%s' undeclared (first use in this function)" % name)
         elif isinstance(expr, SUBSCR):
             arr_type = type_resolve(expr.arrexpr, env)
             if type(arr_type) not in [TPtr, TArr]:
@@ -255,9 +253,3 @@ def AST_TYPE(ast):
         raise TypeError("Entrypoint 'main' type invalid (expected %s, got %s)" % (main_type_expect, genv["main"]), main_lineno)
 
     return ast
-
-
-if __name__ == "__main__":
-    with open("../sample_input/avg.c", "r") as f:
-        result = AST_TYPE(AST_YACC(f.read()))
-    print(result)

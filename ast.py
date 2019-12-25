@@ -9,7 +9,7 @@ class AST():
 
 # goal : [def, def, ... , def]
 class GOAL(AST):
-    def __init__(self, defs): 
+    def __init__(self, defs):
         self.defs = defs
 
     def __add__(self, rhs):

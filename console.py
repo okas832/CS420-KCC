@@ -63,8 +63,3 @@ class Console:
                 exit()
             else:
                 print("Unknown command '%s'" % args[0])
-
-if __name__ == "__main__":
-    console = Console("../sample_input/tests/00127.c", print_code=True)
-    console.init()
-    console.interface.start()
