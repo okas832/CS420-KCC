@@ -339,7 +339,7 @@ def exec_expr(expr, env):
                     return None
                 else:
                     assert call_ret is None or (isinstance(call_ret, VRETURN) and call_ret.ret_val is None)
-                    raise RuntimeError("Missing return (expected '%s')" % func.ctype.ret_type)
+                    raise RuntimeError("Missing return (expected '%s')" % func.ctype.ret_type, func.body.lineno.end)
         elif isinstance(expr, POSTOP):
             ret = exec_postop(expr, env)
         elif isinstance(expr, ADDR):
@@ -590,7 +590,7 @@ def mem_command():
             malloc_size += size
             chunk_count += 1
         elif size == 0:
-            raise RuntimeError("Unexpected error in built-in function malloc")
+            raise RuntimeError("Unexpected error in built-in command 'mem'")
 
         idx += abs(size)
     print("Dynamic allocation : %d, %d" % (chunk_count, malloc_size))
