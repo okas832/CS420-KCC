@@ -435,7 +435,7 @@ def p_expr_2(p):
     # Handle postexpr as lvalue (ID or ID LBRACK expr_many RBRACK)
     # If not, throw exception
     if not (isinstance(p[1], ID) or (isinstance(p[1], SUBSCR) and isinstance(p[1].arrexpr, ID))):
-        raise SyntaxError("lvalue required as left operand of assignment")
+        raise SyntaxError("lvalue required as left operand of assignment", p.lineno(1))
     if p[2] == "":
         p[0] = ASSIGN(p[1], p[3], Ln(p.linespan(0)))
     else:
@@ -516,9 +516,7 @@ def p_empty(p):
     pass
 
 def p_error(p):
-    stack_state_str = ' '.join([symbol.type for symbol in c_parser.symstack][1:])
-    print('Syntax Error.\nParser State : {}\nStack state : {}\nComes : {}'.format(c_parser.state, stack_state_str, p))
-    exit(-1)
+    raise SyntaxError('YACC', p.lineno)
 
 def AST_YACC(code):
     return yacc.parse(code, tracking=True)

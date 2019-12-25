@@ -18,11 +18,19 @@ class Interface:
         try:
             self.file = open(self.filename, "r").read()
         except:
-            raise FileNotFoundError("Error: cannot load input file of name " + self.filename)
+            print("FileNotFoundError: cannot load input file of name " + self.filename)
+            exit(-1)
 
     def makeAST(self):
-        self.AST = AST_YACC(self.file)
-        self.AST = AST_TYPE(self.AST)
+        try:
+            self.AST = AST_YACC(self.file)
+            self.AST = AST_TYPE(self.AST)
+        except SyntaxError as syntaxE:
+            print("Syntax Error : line %d (%s)" % (syntaxE.args[1], syntaxE.args[0]))
+            exit(-1)
+        except TypeError as typeE:
+            print("Type Error : line %d (%s)" % (typeE.args[1], typeE.args[0]))
+            exit(-1)
 
     def load(self):
         self.loadfile()
@@ -55,8 +63,8 @@ class Interface:
     def start(self):
         try:
             AST_INTERPRET(self.AST, self)
-        except Exception as e:
-            print(e)
+        except RuntimeError as runtimeE:
+            print("Runtime Error : line %d (%s)" % (runtimeE.args[1], runtimeE.args[0]))
             self.is_running = False
 
         self.console.prompt()
